@@ -1,0 +1,88 @@
+:root {
+  /* Table & surfaces */
+  --bg-table: #0a3d2e;
+  --bg-surface: #0f172a;
+  --bg-overlay: rgba(0,0,0,0.78);
+  --bg-card: #ffffff;
+  --bg-card-back: #1a237e;
+
+  /* Property colors */
+  --color-brown: #955436;
+  --color-lightblue: #aae0fa;
+  --color-pink: #d93a96;
+  --color-orange: #f7941d;
+  --color-red: #ed1b24;
+  --color-yellow: #fef200;
+  --color-green: #1fb25a;
+  --color-darkblue: #0072bb;
+  --color-railroad: #2d2d2d;
+  --color-utility: #9e9e9e;
+
+  /* Card type accents */
+  --color-money-bg: #f1f8e9;
+  --color-money-accent: #2e7d32;
+  --color-action-bg: #fff8f0;
+  --color-action-accent: #e65100;
+  --color-rent-bg: #f3e5f5;
+  --color-rent-accent: #6a1b9a;
+
+  /* UI */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-border: rgba(255,255,255,0.1);
+
+  /* Cards */
+  --card-w: 76px;
+  --card-h: 106px;
+  --card-w-md: 100px;
+  --card-h-md: 140px;
+  --card-w-lg: 130px;
+  --card-h-lg: 182px;
+  --card-radius: 10px;
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+  --card-shadow-hover: 0 16px 40px rgba(0,0,0,0.7), 0 4px 8px rgba(0,0,0,0.4);
+
+  /* Motion */
+  --t-fast: 150ms cubic-bezier(0.4,0,0.2,1);
+  --t-base: 250ms cubic-bezier(0.4,0,0.2,1);
+  --t-slow: 400ms cubic-bezier(0.4,0,0.2,1);
+  --font-game: 'Nunito', system-ui, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-game);
+  background: var(--bg-table);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
