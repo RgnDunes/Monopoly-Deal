@@ -109,6 +109,35 @@ function GameBoard() {
     return () => clearTimeout(autoDrawRef.current)
   }, [game?.turnPhase, game?.currentPlayerIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-end turn when plays remaining hits 0
+  const autoEndRef = useRef(null)
+  useEffect(() => {
+    if (!game || game.turnPhase !== 'play' || game.playsRemaining > 0 || game.winner) return
+    const pendingPayments = useGameStore.getState().pendingPayments
+    if (pendingPayments.length > 0) return // wait for payments to resolve
+    const currentPlayer = game.players[game.currentPlayerIndex]
+    const isBot = currentPlayer.name.toLowerCase().startsWith('bot') ||
+                  currentPlayer.name.toLowerCase().startsWith('cpu')
+    if (isBot) return
+
+    autoEndRef.current = setTimeout(() => {
+      const g = useGameStore.getState().game
+      if (!g || g.playsRemaining > 0) return
+      const cp = g.players[g.currentPlayerIndex]
+      if (cp.hand.length > 7) {
+        useUIStore.getState().showModal('discard', { needToDiscard: cp.hand.length - 7 })
+        return
+      }
+      if (useGameStore.getState().isLocalGame) {
+        const nextIndex = (g.currentPlayerIndex + 1) % g.players.length
+        useUIStore.getState().showPassDeviceModal(g.players[nextIndex].name)
+      }
+      useGameStore.getState().endTurn()
+    }, 800)
+
+    return () => clearTimeout(autoEndRef.current)
+  }, [game?.turnPhase, game?.playsRemaining, game?.currentPlayerIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleEndTurn = useCallback(() => {
     if (!game) return
     const currentPlayer = game.players[game.currentPlayerIndex]
