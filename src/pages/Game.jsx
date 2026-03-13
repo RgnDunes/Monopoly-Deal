@@ -10,10 +10,12 @@ import PayDebtModal from '../components/Modals/PayDebtModal.jsx'
 import JustSayNoModal from '../components/Modals/JustSayNoModal.jsx'
 import PassDeviceModal from '../components/Modals/PassDeviceModal.jsx'
 import WinScreen from '../components/WinScreen/WinScreen.jsx'
+import useBotTurns from '../hooks/useBotTurns.js'
 
 function Game() {
   const game = useGameStore(s => s.game)
   const navigate = useNavigate()
+  useBotTurns()
 
   useEffect(() => {
     if (!game) {

@@ -1,0 +1,79 @@
+/* Mobile responsive breakpoints */
+
+@media (max-width: 768px) {
+  :root {
+    --card-w: 56px;
+    --card-h: 78px;
+    --card-w-md: 72px;
+    --card-h-md: 100px;
+    --card-w-lg: 96px;
+    --card-h-lg: 134px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --card-w: 44px;
+    --card-h: 62px;
+    --card-w-md: 56px;
+    --card-h-md: 78px;
+    --card-w-lg: 72px;
+    --card-h-lg: 100px;
+  }
+}
+
+/* Touch-friendly targets */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --card-w: 40px;
+    --card-h: 56px;
+    --card-w-md: 52px;
+    --card-h-md: 72px;
+  }
+}
+
+/* Focus styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Skip link for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
