@@ -1,5 +1,6 @@
 import { createDeck } from './deck.js'
 import { isSetComplete } from './properties.js'
+import { calculateRent } from './rent.js'
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9)
@@ -62,7 +63,6 @@ export function drawCards(state) {
   let deck = [...state.deck]
   let discard = [...state.discard]
 
-  // If deck is empty, shuffle discard into deck
   if (deck.length === 0) {
     deck = [...discard].sort(() => Math.random() - 0.5)
     discard = []
@@ -130,7 +130,6 @@ export function playPropertyCard(state, cardId, color) {
     if (i !== playerIndex) return p
     const existingCards = p.properties[targetColor] || []
     const newColorArray = [...existingCards, { ...card, color: targetColor }]
-    // Preserve hasHouse/hasHotel flags if they existed
     if (existingCards.hasHouse) newColorArray.hasHouse = true
     if (existingCards.hasHotel) newColorArray.hasHotel = true
     return {
@@ -195,9 +194,6 @@ export function resolvePassGo(state) {
 
 /**
  * Resolve Deal Breaker: steal a complete set from a target player.
- * @param {object} state
- * @param {number} targetIndex - Index of the target player
- * @param {string} color - Color of the set to steal
  */
 export function resolveDealBreaker(state, targetIndex, color) {
   const target = state.players[targetIndex]
@@ -226,18 +222,11 @@ export function resolveDealBreaker(state, targetIndex, color) {
     return p
   })
 
-  return {
-    ...state,
-    players: updatedPlayers,
-  }
+  return { ...state, players: updatedPlayers }
 }
 
 /**
  * Resolve Sly Deal: steal a single property card from a target player.
- * Cannot steal from a complete set or steal a rainbow wild.
- * @param {object} state
- * @param {number} targetIndex - Index of the target player
- * @param {string} cardId - ID of the card to steal
  */
 export function resolveSlyDeal(state, targetIndex, cardId) {
   const target = state.players[targetIndex]
@@ -245,15 +234,12 @@ export function resolveSlyDeal(state, targetIndex, cardId) {
 
   const playerIndex = state.currentPlayerIndex
 
-  // Find the card in target's properties
   let foundColor = null
   let foundCard = null
   for (const [color, cards] of Object.entries(target.properties)) {
     const card = cards.find(c => c.id === cardId)
     if (card) {
-      // Cannot steal from a complete set
       if (isSetComplete(target.properties, color)) return state
-      // Cannot steal rainbow wild
       if (card.isRainbowWild) return state
       foundColor = color
       foundCard = card
@@ -285,17 +271,11 @@ export function resolveSlyDeal(state, targetIndex, cardId) {
     return p
   })
 
-  return {
-    ...state,
-    players: updatedPlayers,
-  }
+  return { ...state, players: updatedPlayers }
 }
 
 /**
  * Resolve Just Say No chain.
- * @param {object} state
- * @param {{ jsnCount: number }} options
- * @returns {{ state: object, cancelled: boolean }}
  */
 export function resolveJustSayNo(state, { jsnCount }) {
   const cancelled = jsnCount % 2 === 1
@@ -304,10 +284,6 @@ export function resolveJustSayNo(state, { jsnCount }) {
 
 /**
  * Resolve House: add a house to a complete property set.
- * Sets hasHouse flag on the property array.
- * @param {object} state
- * @param {string} cardId - ID of the house card in hand
- * @param {string} color - Color of the set to add the house to
  */
 export function resolveHouse(state, cardId, color) {
   const playerIndex = state.currentPlayerIndex
@@ -322,7 +298,6 @@ export function resolveHouse(state, cardId, color) {
     if (i !== playerIndex) return p
     const newColorArray = [...p.properties[color]]
     newColorArray.hasHouse = true
-    // Preserve hasHotel if it existed
     if (p.properties[color].hasHotel) newColorArray.hasHotel = true
     return {
       ...p,
@@ -334,19 +309,11 @@ export function resolveHouse(state, cardId, color) {
     }
   })
 
-  return {
-    ...state,
-    players: updatedPlayers,
-    playsRemaining: state.playsRemaining - 1,
-  }
+  return { ...state, players: updatedPlayers, playsRemaining: state.playsRemaining - 1 }
 }
 
 /**
  * Resolve Hotel: add a hotel to a complete property set that has a house.
- * Sets hasHotel flag, removes hasHouse flag, moves house value ($3) to bank.
- * @param {object} state
- * @param {string} cardId - ID of the hotel card in hand
- * @param {string} color - Color of the set to add the hotel to
  */
 export function resolveHotel(state, cardId, color) {
   const playerIndex = state.currentPlayerIndex
@@ -363,7 +330,6 @@ export function resolveHotel(state, cardId, color) {
     const newColorArray = [...p.properties[color]]
     newColorArray.hasHotel = true
     newColorArray.hasHouse = false
-    // Add the house value ($3) to bank as a money card
     const houseMoneyCard = {
       id: `house-to-bank-${generateId()}`,
       type: 'money',
@@ -381,9 +347,199 @@ export function resolveHotel(state, cardId, color) {
     }
   })
 
+  return { ...state, players: updatedPlayers, playsRemaining: state.playsRemaining - 1 }
+}
+
+/**
+ * Move a wild card between color groups during your turn (free action).
+ */
+export function moveWild(state, cardId, fromColor, toColor) {
+  const playerIndex = state.currentPlayerIndex
+  const player = state.players[playerIndex]
+
+  const fromCards = player.properties[fromColor] || []
+  const card = fromCards.find(c => c.id === cardId)
+  if (!card || card.type !== 'wild') return state
+  if (!card.isRainbowWild && !card.colors.includes(toColor)) return state
+
+  const updatedPlayers = state.players.map((p, i) => {
+    if (i !== playerIndex) return p
+    const newFrom = p.properties[fromColor].filter(c => c.id !== cardId)
+    const newTo = [...(p.properties[toColor] || []), { ...card, color: toColor }]
+    if (p.properties[fromColor]?.hasHouse) newFrom.hasHouse = true
+    if (p.properties[fromColor]?.hasHotel) newFrom.hasHotel = true
+    if (p.properties[toColor]?.hasHouse) newTo.hasHouse = true
+    if (p.properties[toColor]?.hasHotel) newTo.hasHotel = true
+    return {
+      ...p,
+      properties: { ...p.properties, [fromColor]: newFrom, [toColor]: newTo },
+    }
+  })
+
+  return { ...state, players: updatedPlayers }
+}
+
+/**
+ * Play an action card from hand (removes from hand, adds to discard).
+ */
+export function playActionCard(state, cardId) {
+  const playerIndex = state.currentPlayerIndex
+  const player = state.players[playerIndex]
+  const card = player.hand.find(c => c.id === cardId)
+  if (!card) return state
+
+  const updatedPlayers = state.players.map((p, i) =>
+    i === playerIndex ? { ...p, hand: p.hand.filter(c => c.id !== cardId) } : p
+  )
+
   return {
     ...state,
     players: updatedPlayers,
+    discard: [...state.discard, card],
     playsRemaining: state.playsRemaining - 1,
   }
+}
+
+/**
+ * Resolve Debt Collector: one chosen player pays $5M.
+ */
+export function resolveDebtCollector(state, targetIndex) {
+  return {
+    state,
+    pendingPayment: { fromIndex: targetIndex, toIndex: state.currentPlayerIndex, amount: 5 },
+  }
+}
+
+/**
+ * Resolve Birthday: all other players pay $2M.
+ */
+export function resolveBirthday(state) {
+  const pendingPayments = state.players
+    .map((_p, i) => i)
+    .filter(i => i !== state.currentPlayerIndex)
+    .map(i => ({ fromIndex: i, toIndex: state.currentPlayerIndex, amount: 2 }))
+  return { state, pendingPayments }
+}
+
+/**
+ * Resolve Rent: charge rent for a color to target player(s).
+ */
+export function resolveRent(state, color, targetIndices, doubled) {
+  const player = state.players[state.currentPlayerIndex]
+  let rent = calculateRent(player.properties, color)
+  if (doubled) rent *= 2
+
+  const pendingPayments = targetIndices.map(ti => ({
+    fromIndex: ti,
+    toIndex: state.currentPlayerIndex,
+    amount: rent,
+  }))
+
+  return { state, pendingPayments }
+}
+
+/**
+ * Resolve Forced Deal: swap one of your properties with one opponent property.
+ */
+export function resolveForcedDeal(state, targetIndex, yourCardId, theirCardId) {
+  const playerIndex = state.currentPlayerIndex
+  const actor = state.players[playerIndex]
+  const target = state.players[targetIndex]
+  if (!actor || !target) return state
+
+  let yourColor = null, yourCard = null
+  for (const [clr, cards] of Object.entries(actor.properties)) {
+    const found = cards.find(c => c.id === yourCardId)
+    if (found) { yourColor = clr; yourCard = found; break }
+  }
+
+  let theirColor = null, theirCard = null
+  for (const [clr, cards] of Object.entries(target.properties)) {
+    const found = cards.find(c => c.id === theirCardId)
+    if (found) {
+      if (isSetComplete(target.properties, clr)) return state
+      theirColor = clr; theirCard = found; break
+    }
+  }
+
+  if (!yourCard || !theirCard) return state
+
+  const updatedPlayers = state.players.map((p, i) => {
+    if (i === playerIndex) {
+      return {
+        ...p,
+        properties: {
+          ...p.properties,
+          [yourColor]: p.properties[yourColor].filter(c => c.id !== yourCardId),
+          [theirColor]: [...(p.properties[theirColor] || []), theirCard],
+        },
+      }
+    }
+    if (i === targetIndex) {
+      return {
+        ...p,
+        properties: {
+          ...p.properties,
+          [theirColor]: p.properties[theirColor].filter(c => c.id !== theirCardId),
+          [yourColor]: [...(p.properties[yourColor] || []), yourCard],
+        },
+      }
+    }
+    return p
+  })
+
+  return { ...state, players: updatedPlayers }
+}
+
+/**
+ * Resolve paying a debt: move cards from payer to receiver.
+ */
+export function resolvePayDebt(state, payingIndex, receivingIndex, cardIds) {
+  const payer = state.players[payingIndex]
+  if (!payer) return state
+
+  const bankCardIds = cardIds.filter(id => payer.bank.some(c => c.id === id))
+  const propertyCardIds = cardIds.filter(id => {
+    for (const cards of Object.values(payer.properties)) {
+      if (cards.some(c => c.id === id)) return true
+    }
+    return false
+  })
+
+  const bankCards = payer.bank.filter(c => bankCardIds.includes(c.id))
+  const propertyCards = []
+  const propertyRemovals = {}
+
+  for (const id of propertyCardIds) {
+    for (const [clr, cards] of Object.entries(payer.properties)) {
+      const card = cards.find(c => c.id === id)
+      if (card) {
+        propertyCards.push(card)
+        if (!propertyRemovals[clr]) propertyRemovals[clr] = []
+        propertyRemovals[clr].push(id)
+        break
+      }
+    }
+  }
+
+  const updatedPlayers = state.players.map((p, i) => {
+    if (i === payingIndex) {
+      const newProperties = { ...p.properties }
+      for (const [clr, ids] of Object.entries(propertyRemovals)) {
+        newProperties[clr] = newProperties[clr].filter(c => !ids.includes(c.id))
+      }
+      return { ...p, bank: p.bank.filter(c => !bankCardIds.includes(c.id)), properties: newProperties }
+    }
+    if (i === receivingIndex) {
+      const newProperties = { ...p.properties }
+      for (const card of propertyCards) {
+        const clr = card.color || 'brown'
+        newProperties[clr] = [...(newProperties[clr] || []), card]
+      }
+      return { ...p, bank: [...p.bank, ...bankCards], properties: newProperties }
+    }
+    return p
+  })
+
+  return { ...state, players: updatedPlayers }
 }
