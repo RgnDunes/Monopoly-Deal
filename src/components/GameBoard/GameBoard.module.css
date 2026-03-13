@@ -1,1 +1,141 @@
-/* GameBoard styles */
+.board {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.opponentsRow {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.centerArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  position: relative;
+}
+
+.myArea {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+.myProperties {
+  width: 100%;
+  max-width: 800px;
+}
+
+.myBankAndHand {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.myBankWrapper {
+  flex: 0 0 auto;
+}
+
+.myHandWrapper {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.drawButton {
+  padding: 12px 32px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-game);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.drawButton:hover {
+  background: var(--color-primary-hover);
+}
+
+.drawButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.endTurnButton {
+  padding: 8px 24px;
+  background: var(--color-success);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-game);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.endTurnButton:hover {
+  background: #0d9668;
+}
+
+.actionBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.deckPile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.deckCount {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.discardPile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.discardLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.emptyDiscard {
+  width: var(--card-w);
+  height: var(--card-h);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--card-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}

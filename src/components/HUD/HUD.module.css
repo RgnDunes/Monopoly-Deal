@@ -1,1 +1,131 @@
-/* HUD styles */
+/* TurnIndicator */
+.turnIndicator {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+  font-family: var(--font-game);
+}
+
+.turnName {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.turnPhase {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.playsLeft {
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Toast */
+.toastContainer {
+  position: fixed;
+  top: 56px;
+  right: 12px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-game);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  cursor: pointer;
+  max-width: 280px;
+  animation: toastSlideIn 0.3s ease-out;
+}
+
+.toastInfo {
+  background: var(--color-primary);
+}
+
+.toastSuccess {
+  background: var(--color-success);
+}
+
+.toastError {
+  background: var(--color-danger);
+}
+
+.toastWarning {
+  background: var(--color-warning);
+  color: #1a1a1a;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ActionLog */
+.actionLog {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  max-width: 220px;
+  max-height: 120px;
+  overflow-y: auto;
+  z-index: 50;
+  font-family: var(--font-game);
+}
+
+.logTitle {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.logEntry {
+  font-size: 0.72rem;
+  color: var(--color-text);
+  padding: 2px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logEntry:last-child {
+  border-bottom: none;
+}
