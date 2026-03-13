@@ -1,4 +1,8 @@
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import useGameStore from '../store/gameStore.js'
+import useUIStore from '../store/uiStore.js'
+import { connectSocket, createRoom, joinRoom, startGame as startMultiplayerGame } from '../services/socket.js'
 
 const lobbyStyles = {
   container: {
@@ -14,15 +18,51 @@ const lobbyStyles = {
     fontSize: '1.5rem',
     fontWeight: '700',
     color: 'var(--color-text)',
-    marginBottom: '8px',
-  },
-  subtitle: {
-    fontSize: '0.9rem',
-    color: 'var(--color-text-muted)',
     marginBottom: '24px',
   },
-  backButton: {
-    padding: '10px 24px',
+  card: {
+    background: 'var(--bg-surface)',
+    borderRadius: 'var(--radius-lg)',
+    padding: '24px',
+    width: '100%',
+    maxWidth: '400px',
+    border: '1px solid var(--color-border)',
+    marginBottom: '16px',
+  },
+  roomCode: {
+    fontSize: '2rem',
+    fontWeight: '900',
+    color: 'var(--color-warning)',
+    textAlign: 'center',
+    letterSpacing: '4px',
+    marginBottom: '16px',
+  },
+  playerList: {
+    listStyle: 'none',
+    padding: 0,
+    margin: '0 0 16px 0',
+  },
+  playerItem: {
+    padding: '8px 12px',
+    borderBottom: '1px solid var(--color-border)',
+    color: 'var(--color-text)',
+    fontSize: '0.9rem',
+  },
+  input: {
+    width: '100%',
+    padding: '10px 12px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius-sm)',
+    color: 'var(--color-text)',
+    fontFamily: 'var(--font-game)',
+    fontSize: '0.9rem',
+    outline: 'none',
+    marginBottom: '12px',
+  },
+  button: {
+    width: '100%',
+    padding: '12px',
     background: 'var(--color-primary)',
     color: 'white',
     border: 'none',
@@ -31,18 +71,176 @@ const lobbyStyles = {
     fontSize: '0.9rem',
     fontWeight: '700',
     cursor: 'pointer',
+    marginBottom: '8px',
+  },
+  backButton: {
+    padding: '8px 20px',
+    background: 'transparent',
+    border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius-sm)',
+    color: 'var(--color-text-muted)',
+    fontFamily: 'var(--font-game)',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+  },
+  label: {
+    display: 'block',
+    fontSize: '0.8rem',
+    color: 'var(--color-text-muted)',
+    marginBottom: '4px',
+  },
+  hostBadge: {
+    fontSize: '0.7rem',
+    color: 'var(--color-warning)',
+    marginLeft: '8px',
   },
 }
 
 function Lobby() {
+  const { roomCode: urlRoomCode } = useParams()
   const navigate = useNavigate()
+  const setGame = useGameStore(s => s.setGame)
+  const setMyPlayerIndex = useGameStore(s => s.setMyPlayerIndex)
+  const addToast = useUIStore(s => s.addToast)
+
+  const [playerName, setPlayerName] = useState('')
+  const [roomCode, setRoomCode] = useState(urlRoomCode || '')
+  const [joined, setJoined] = useState(false)
+  const [players, setPlayers] = useState([])
+  const [myIndex, setMyIndex] = useState(-1)
+
+  useEffect(() => {
+    const socket = connectSocket()
+
+    socket.on('room-update', ({ players: updatedPlayers }) => {
+      setPlayers(updatedPlayers)
+    })
+
+    socket.on('game-state', (state) => {
+      setGame(state)
+      navigate(`/game/${roomCode}`)
+    })
+
+    socket.on('player-left', ({ playerIndex }) => {
+      addToast(`Player ${playerIndex + 1} left the game`, 'warning')
+    })
+
+    return () => {
+      socket.off('room-update')
+      socket.off('game-state')
+      socket.off('player-left')
+    }
+  }, [roomCode, setGame, navigate, addToast])
+
+  const handleCreate = async () => {
+    const name = playerName.trim() || 'Player 1'
+    try {
+      const result = await createRoom(name)
+      setRoomCode(result.roomCode)
+      setMyIndex(result.playerIndex)
+      setMyPlayerIndex(result.playerIndex)
+      setJoined(true)
+      setPlayers([{ name, index: result.playerIndex }])
+      addToast(`Room ${result.roomCode} created!`, 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    }
+  }
+
+  const handleJoin = async () => {
+    const name = playerName.trim() || 'Player'
+    const code = roomCode.trim().toUpperCase()
+    if (!code) return addToast('Enter a room code', 'warning')
+    try {
+      const result = await joinRoom(code, name)
+      setRoomCode(result.roomCode)
+      setMyIndex(result.playerIndex)
+      setMyPlayerIndex(result.playerIndex)
+      setJoined(true)
+      addToast(`Joined room ${result.roomCode}`, 'success')
+    } catch (err) {
+      addToast(err.message, 'error')
+    }
+  }
+
+  const handleStart = async () => {
+    try {
+      await startMultiplayerGame()
+    } catch (err) {
+      addToast(err.message, 'error')
+    }
+  }
+
+  if (!joined) {
+    return (
+      <div style={lobbyStyles.container}>
+        <div style={lobbyStyles.title}>Multiplayer</div>
+        <div style={lobbyStyles.card}>
+          <label style={lobbyStyles.label}>Your Name</label>
+          <input
+            style={lobbyStyles.input}
+            placeholder="Enter your name"
+            value={playerName}
+            onChange={e => setPlayerName(e.target.value)}
+          />
+          <button style={lobbyStyles.button} onClick={handleCreate}>
+            Create Room
+          </button>
+          <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', margin: '12px 0', fontSize: '0.85rem' }}>
+            — or —
+          </div>
+          <label style={lobbyStyles.label}>Room Code</label>
+          <input
+            style={lobbyStyles.input}
+            placeholder="ABCD"
+            value={roomCode}
+            onChange={e => setRoomCode(e.target.value.toUpperCase())}
+            maxLength={4}
+          />
+          <button style={lobbyStyles.button} onClick={handleJoin}>
+            Join Room
+          </button>
+        </div>
+        <button style={lobbyStyles.backButton} onClick={() => navigate('/')}>
+          Back to Home
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div style={lobbyStyles.container}>
-      <div style={lobbyStyles.title}>Multiplayer Lobby</div>
-      <div style={lobbyStyles.subtitle}>Coming soon! For now, try a local game.</div>
+      <div style={lobbyStyles.title}>Lobby</div>
+      <div style={lobbyStyles.card}>
+        <div style={lobbyStyles.roomCode}>{roomCode}</div>
+        <label style={lobbyStyles.label}>Players ({players.length}/5)</label>
+        <ul style={lobbyStyles.playerList}>
+          {players.map((p) => (
+            <li key={p.index} style={lobbyStyles.playerItem}>
+              {p.name}
+              {p.index === 0 && <span style={lobbyStyles.hostBadge}>HOST</span>}
+              {p.index === myIndex && ' (you)'}
+            </li>
+          ))}
+        </ul>
+        {myIndex === 0 && players.length >= 2 && (
+          <button style={lobbyStyles.button} onClick={handleStart}>
+            Start Game
+          </button>
+        )}
+        {myIndex === 0 && players.length < 2 && (
+          <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+            Waiting for more players...
+          </div>
+        )}
+        {myIndex !== 0 && (
+          <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+            Waiting for host to start...
+          </div>
+        )}
+      </div>
       <button style={lobbyStyles.backButton} onClick={() => navigate('/')}>
-        Back to Home
+        Leave
       </button>
     </div>
   )
