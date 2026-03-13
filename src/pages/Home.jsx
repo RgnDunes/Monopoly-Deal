@@ -30,6 +30,7 @@ const homeStyles = {
     width: '100%',
     maxWidth: '400px',
     border: '1px solid var(--color-border)',
+    marginBottom: '16px',
   },
   sectionTitle: {
     fontSize: '1.1rem',
@@ -84,6 +85,18 @@ const homeStyles = {
     fontWeight: '700',
     cursor: 'pointer',
     marginTop: '8px',
+  },
+  multiplayerButton: {
+    width: '100%',
+    padding: '14px',
+    background: 'var(--color-success)',
+    color: 'white',
+    border: 'none',
+    borderRadius: 'var(--radius-md)',
+    fontFamily: 'var(--font-game)',
+    fontSize: '1rem',
+    fontWeight: '700',
+    cursor: 'pointer',
   },
 }
 
@@ -154,7 +167,14 @@ function Home() {
         </div>
 
         <button style={homeStyles.startButton} onClick={handleStart}>
-          Start Game
+          Start Local Game
+        </button>
+      </div>
+
+      <div style={homeStyles.card}>
+        <div style={homeStyles.sectionTitle}>Online Multiplayer</div>
+        <button style={homeStyles.multiplayerButton} onClick={() => navigate('/lobby/new')}>
+          Create or Join Room
         </button>
       </div>
     </div>
