@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import useUIStore from '../../store/uiStore.js'
 import useGameStore from '../../store/gameStore.js'
 import { calculateRent } from '../../engine/rent.js'
+import { isSetComplete, hasHouse } from '../../engine/properties.js'
 import styles from './Modals.module.css'
 
 function TargetSelectModal() {
@@ -95,11 +96,16 @@ function TargetSelectModal() {
     }
   }
 
-  // For house/hotel, show own complete sets
+  // For house/hotel, show only eligible complete sets
   if (action === 'house' || action === 'hotel') {
     const currentPlayer = game.players[game.currentPlayerIndex]
-    const completeSets = Object.entries(currentPlayer.properties)
-      .filter(([, cards]) => cards && cards.length > 0)
+    const eligibleSets = Object.entries(currentPlayer.properties)
+      .filter(([color, cards]) => {
+        if (!cards || cards.length === 0) return false
+        if (!isSetComplete(currentPlayer.properties, color)) return false
+        if (action === 'hotel' && !hasHouse(currentPlayer.properties, color)) return false
+        return true
+      })
 
     return (
       <motion.div
@@ -115,19 +121,39 @@ function TargetSelectModal() {
           onClick={e => e.stopPropagation()}
         >
           <div className={styles.modalTitle}>{getTitle()}</div>
-          <div className={styles.modalSubtitle}>Choose a property set</div>
-          <div className={styles.playerList}>
-            {completeSets.map(([color]) => (
-              <button
-                key={color}
-                className={styles.playerButton}
-                onClick={() => handleColorSelect(color)}
-              >
-                {color}
-              </button>
-            ))}
-          </div>
-          <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
+          {eligibleSets.length > 0 ? (
+            <>
+              <div className={styles.modalSubtitle}>
+                {action === 'house' ? 'Choose a complete set to add a house' : 'Choose a set with a house to add a hotel'}
+              </div>
+              <div className={styles.playerList}>
+                {eligibleSets.map(([color]) => (
+                  <button
+                    key={color}
+                    className={styles.playerButton}
+                    onClick={() => handleColorSelect(color)}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className={styles.modalSubtitle}>
+              {action === 'house'
+                ? 'You need a complete property set to place a house. Bank it as money instead.'
+                : 'You need a complete set with a house to place a hotel. Bank it as money instead.'}
+            </div>
+          )}
+          <button className={styles.cancelButton} onClick={() => {
+            if (eligibleSets.length === 0) {
+              bankCard(modalData.cardId)
+              addToast(`No eligible sets — banked ${action === 'house' ? 'House' : 'Hotel'} as money`, 'info')
+            }
+            closeModal()
+          }}>
+            {eligibleSets.length === 0 ? 'Bank as Money' : 'Cancel'}
+          </button>
         </motion.div>
       </motion.div>
     )
@@ -232,7 +258,19 @@ function TargetSelectModal() {
   // Step 2: For deal breaker, select color set
   if (action === 'dealBreaker') {
     const target = game.players[selectedPlayer]
-    const sets = Object.entries(target.properties).filter(([, cards]) => cards && cards.length > 0)
+    const sets = Object.entries(target.properties).filter(([color, cards]) =>
+      cards && cards.length > 0 && isSetComplete(target.properties, color)
+    )
+    if (sets.length === 0) {
+      return (
+        <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
+          <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalTitle}>{target.name} has no complete sets to steal</div>
+            <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Pick another player</button>
+          </motion.div>
+        </motion.div>
+      )
+    }
     return (
       <motion.div
         className={styles.overlay}
