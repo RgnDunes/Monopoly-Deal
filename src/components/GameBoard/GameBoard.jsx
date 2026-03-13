@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import useGameStore from '../../store/gameStore.js'
 import useUIStore from '../../store/uiStore.js'
 import PlayerZone from './PlayerZone.jsx'
@@ -84,6 +84,23 @@ function GameBoard() {
     addToast(`${game.players[game.currentPlayerIndex].name} drew 2 cards`, 'info')
   }, [game, drawCards, addToast])
 
+  // Auto-draw when it's a human player's draw phase
+  const autoDrawRef = useRef(null)
+  useEffect(() => {
+    if (!game || game.turnPhase !== 'draw' || game.winner) return
+    const currentPlayer = game.players[game.currentPlayerIndex]
+    const isBot = currentPlayer.name.toLowerCase().startsWith('bot') ||
+                  currentPlayer.name.toLowerCase().startsWith('cpu')
+    if (isBot) return
+
+    autoDrawRef.current = setTimeout(() => {
+      drawCards()
+      useUIStore.getState().addToast(`${currentPlayer.name} drew 2 cards`, 'info')
+    }, 600)
+
+    return () => clearTimeout(autoDrawRef.current)
+  }, [game?.turnPhase, game?.currentPlayerIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleEndTurn = useCallback(() => {
     if (!game) return
     const currentPlayer = game.players[game.currentPlayerIndex]
@@ -123,9 +140,7 @@ function GameBoard() {
         />
         <div className={styles.actionBar}>
           {isDrawPhase && (
-            <button className={styles.drawButton} onClick={handleDraw}>
-              Draw Cards
-            </button>
+            <div className={styles.drawingLabel}>Drawing cards...</div>
           )}
           {isPlayPhase && (
             <button className={styles.endTurnButton} onClick={handleEndTurn}>

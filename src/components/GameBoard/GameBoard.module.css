@@ -102,6 +102,18 @@
   justify-content: center;
 }
 
+.drawingLabel {
+  font-family: var(--font-game);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  animation: drawPulse 1s ease-in-out infinite;
+}
+
+@keyframes drawPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .deckPile {
   display: flex;
   flex-direction: column;
