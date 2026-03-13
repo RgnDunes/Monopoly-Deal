@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import useUIStore from '../../store/uiStore.js'
 import useGameStore from '../../store/gameStore.js'
+import { calculateRent } from '../../engine/rent.js'
 import styles from './Modals.module.css'
 
 function TargetSelectModal() {
@@ -15,6 +16,10 @@ function TargetSelectModal() {
   const resolveSlyDeal = useGameStore(s => s.resolveSlyDeal)
   const resolveHouse = useGameStore(s => s.resolveHouse)
   const resolveHotel = useGameStore(s => s.resolveHotel)
+  const playActionCard = useGameStore(s => s.playActionCard)
+  const startRent = useGameStore(s => s.startRent)
+  const startDebtCollector = useGameStore(s => s.startDebtCollector)
+  const startBirthday = useGameStore(s => s.startBirthday)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
 
   if (activeModal !== 'targetSelect' || !modalData || !game) return null
@@ -26,12 +31,12 @@ function TargetSelectModal() {
 
   const handlePlayerSelect = (playerIndex) => {
     if (action === 'debtCollector') {
-      bankCard(modalData.cardId)
-      addToast(`Debt Collector targets ${game.players[playerIndex].name}`, 'info')
+      startDebtCollector(modalData.cardId, playerIndex)
+      addToast(`Debt Collector! ${game.players[playerIndex].name} owes $5M`, 'info')
       closeModal()
     } else if (action === 'birthday') {
-      bankCard(modalData.cardId)
-      addToast("It's your birthday! Collecting from all players", 'info')
+      startBirthday(modalData.cardId)
+      addToast("It's your birthday! Everyone owes $2M", 'info')
       closeModal()
     } else {
       setSelectedPlayer(playerIndex)
@@ -40,8 +45,8 @@ function TargetSelectModal() {
 
   const handleColorSelect = (color) => {
     if (action === 'dealBreaker' && selectedPlayer !== null) {
+      playActionCard(modalData.cardId)
       resolveDealBreaker(selectedPlayer, color)
-      bankCard(modalData.cardId)
       addToast(`Deal Breaker! Stole ${color} set`, 'success')
       closeModal()
     } else if (action === 'house') {
@@ -53,8 +58,14 @@ function TargetSelectModal() {
       addToast(`Placed hotel on ${color}`, 'success')
       closeModal()
     } else if (action === 'rent') {
-      bankCard(modalData.cardId)
-      addToast(`Charged rent for ${color}`, 'info')
+      const currentPlayer = game.players[game.currentPlayerIndex]
+      const rent = calculateRent(currentPlayer.properties, color)
+      if (rent === 0) {
+        addToast(`You have no ${color} properties — can't charge rent!`, 'warning')
+        return
+      }
+      startRent(modalData.cardId, color)
+      addToast(`Charging $${rent}M rent for ${color}!`, 'success')
       closeModal()
     }
   }
@@ -120,9 +131,14 @@ function TargetSelectModal() {
     )
   }
 
-  // For rent, show color selection
+  // For rent, show color selection — only colors the player owns properties for
   if (action === 'rent') {
     const rentColors = modalData.rentColors || []
+    const currentPlayer = game.players[game.currentPlayerIndex]
+    const ownedColors = rentColors.filter(color =>
+      currentPlayer.properties[color] && currentPlayer.properties[color].length > 0
+    )
+
     return (
       <motion.div
         className={styles.overlay}
@@ -137,19 +153,38 @@ function TargetSelectModal() {
           onClick={e => e.stopPropagation()}
         >
           <div className={styles.modalTitle}>{getTitle()}</div>
-          <div className={styles.modalSubtitle}>Choose a color to charge rent for</div>
-          <div className={styles.playerList}>
-            {rentColors.map(color => (
-              <button
-                key={color}
-                className={styles.playerButton}
-                onClick={() => handleColorSelect(color)}
-              >
-                {color}
-              </button>
-            ))}
-          </div>
-          <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
+          {ownedColors.length > 0 ? (
+            <>
+              <div className={styles.modalSubtitle}>Choose a color to charge rent for</div>
+              <div className={styles.playerList}>
+                {ownedColors.map(color => {
+                  const rent = calculateRent(currentPlayer.properties, color)
+                  return (
+                    <button
+                      key={color}
+                      className={styles.playerButton}
+                      onClick={() => handleColorSelect(color)}
+                    >
+                      {color} — ${rent}M rent
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <div className={styles.modalSubtitle}>
+              You don&apos;t own any matching properties. Bank it as money instead.
+            </div>
+          )}
+          <button className={styles.cancelButton} onClick={() => {
+            if (ownedColors.length === 0) {
+              bankCard(modalData.cardId)
+              addToast(`No matching properties — banked rent card as $${game.players[game.currentPlayerIndex].hand.find(c => c.id === modalData.cardId)?.value || 1}M`, 'info')
+            }
+            closeModal()
+          }}>
+            {ownedColors.length === 0 ? 'Bank as Money' : 'Cancel'}
+          </button>
         </motion.div>
       </motion.div>
     )

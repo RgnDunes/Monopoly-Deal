@@ -21,8 +21,7 @@ function GameBoard() {
   const handleActionCard = useCallback((card) => {
     const name = card.name.toLowerCase()
     if (name === 'pass go') {
-      bankCard(card.id)
-      addToast('Banked Pass Go as money', 'success')
+      showModal('actionChoice', { card })
     } else if (name === 'deal breaker') {
       showModal('targetSelect', { action: 'dealBreaker', cardId: card.id })
     } else if (name === 'sly deal') {
@@ -34,15 +33,17 @@ function GameBoard() {
     } else if (name === "it's my birthday") {
       showModal('targetSelect', { action: 'birthday', cardId: card.id })
     } else if (name === 'just say no') {
+      // JSN can only be played reactively — banking is the only proactive option
       bankCard(card.id)
-      addToast('Banked Just Say No as money', 'success')
+      addToast('Banked Just Say No as $4M (play it reactively when targeted)', 'info')
     } else if (name === 'house') {
       showModal('targetSelect', { action: 'house', cardId: card.id })
     } else if (name === 'hotel') {
       showModal('targetSelect', { action: 'hotel', cardId: card.id })
     } else if (name === 'double the rent') {
+      // Double the Rent must be played with a Rent card — bank it otherwise
       bankCard(card.id)
-      addToast('Banked Double the Rent as money', 'success')
+      addToast('Banked Double the Rent as $1M', 'info')
     } else {
       bankCard(card.id)
       addToast(`Banked ${card.name} as money`, 'success')

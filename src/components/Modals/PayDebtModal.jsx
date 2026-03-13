@@ -1,22 +1,34 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import useUIStore from '../../store/uiStore.js'
 import useGameStore from '../../store/gameStore.js'
 import styles from './Modals.module.css'
 
 function PayDebtModal() {
-  const activeModal = useUIStore(s => s.activeModal)
-  const modalData = useUIStore(s => s.modalData)
-  const closeModal = useUIStore(s => s.closeModal)
   const game = useGameStore(s => s.game)
+  const pendingPayments = useGameStore(s => s.pendingPayments)
+  const processPayment = useGameStore(s => s.processPayment)
+  const skipPayment = useGameStore(s => s.skipPayment)
+  const addToast = useUIStore(s => s.addToast)
   const [selectedIds, setSelectedIds] = useState([])
+  const prevPaymentRef = useRef(null)
 
-  if (activeModal !== 'payDebt' || !modalData || !game) return null
+  const payment = pendingPayments[0]
 
-  const payer = game.players[modalData.payerIndex]
+  // Reset selection when payment changes (derive from render, not effect)
+  const paymentKey = payment ? `${payment.fromIndex}-${payment.amount}` : null
+  if (paymentKey !== prevPaymentRef.current) {
+    prevPaymentRef.current = paymentKey
+    if (selectedIds.length > 0) setSelectedIds([])
+  }
+
+  if (!payment || !game) return null
+
+  const payer = game.players[payment.fromIndex]
+  const collector = game.players[payment.toIndex]
   if (!payer) return null
 
-  const amountOwed = modalData.amount || 0
+  const amountOwed = payment.amount || 0
 
   const allPayableCards = [
     ...payer.bank.map(c => ({ ...c, source: 'bank' })),
@@ -24,6 +36,35 @@ function PayDebtModal() {
       cards.map(c => ({ ...c, source: 'property', fromColor: color }))
     ),
   ]
+
+  // If payer has nothing, auto-skip
+  if (allPayableCards.length === 0) {
+    return (
+      <motion.div
+        className={styles.overlay}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <motion.div
+          className={styles.modal}
+          initial={{ scale: 0.9 }}
+          animate={{ scale: 1 }}
+        >
+          <div className={styles.modalTitle}>{payer.name} owes ${amountOwed}M</div>
+          <div className={styles.modalSubtitle}>{payer.name} has nothing to pay with!</div>
+          <button
+            className={styles.primaryButton}
+            onClick={() => {
+              addToast(`${payer.name} has no cards to pay`, 'warning')
+              skipPayment()
+            }}
+          >
+            Continue
+          </button>
+        </motion.div>
+      </motion.div>
+    )
+  }
 
   const selectedTotal = allPayableCards
     .filter(c => selectedIds.includes(c.id))
@@ -48,8 +89,8 @@ function PayDebtModal() {
         initial={{ scale: 0.9 }}
         animate={{ scale: 1 }}
       >
-        <div className={styles.modalTitle}>Pay ${amountOwed}M</div>
-        <div className={styles.modalSubtitle}>Select cards to pay with</div>
+        <div className={styles.modalTitle}>{payer.name} — Pay ${amountOwed}M to {collector.name}</div>
+        <div className={styles.modalSubtitle}>Select cards to pay with (no change given)</div>
         <div className={styles.playerList}>
           {allPayableCards.map(card => (
             <button
@@ -72,7 +113,8 @@ function PayDebtModal() {
           className={styles.primaryButton}
           disabled={!canPay}
           onClick={() => {
-            closeModal()
+            processPayment(payment.fromIndex, payment.toIndex, selectedIds)
+            addToast(`${payer.name} paid $${selectedTotal}M to ${collector.name}`, 'success')
           }}
         >
           Pay

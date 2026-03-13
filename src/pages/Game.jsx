@@ -5,6 +5,7 @@ import GameBoard from '../components/GameBoard/GameBoard.jsx'
 import TurnIndicator from '../components/HUD/TurnIndicator.jsx'
 import Toast from '../components/HUD/Toast.jsx'
 import WildColorModal from '../components/Modals/WildColorModal.jsx'
+import ActionChoiceModal from '../components/Modals/ActionChoiceModal.jsx'
 import TargetSelectModal from '../components/Modals/TargetSelectModal.jsx'
 import PayDebtModal from '../components/Modals/PayDebtModal.jsx'
 import JustSayNoModal from '../components/Modals/JustSayNoModal.jsx'
@@ -31,6 +32,7 @@ function Game() {
       <GameBoard />
       <Toast />
       <WildColorModal />
+      <ActionChoiceModal />
       <TargetSelectModal />
       <PayDebtModal />
       <JustSayNoModal />
