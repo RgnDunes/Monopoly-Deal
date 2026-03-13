@@ -6,9 +6,15 @@ const setupEvents = require('./events')
 const app = express()
 const server = http.createServer(app)
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://rgndunes.github.io',
+]
+
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:4173'],
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
   },
 })
