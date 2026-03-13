@@ -11,7 +11,10 @@ export function countPropertyCards(properties, color) {
 
 export function isSetComplete(properties, color) {
   const needed = getSetSize(color)
-  return needed > 0 && countPropertyCards(properties, color) >= needed
+  if (needed <= 0 || countPropertyCards(properties, color) < needed) return false
+  // Rule: at least 1 standard (non-wild) property card required
+  const hasStandard = properties[color].some(c => c.type === 'property')
+  return hasStandard
 }
 
 export function getCompleteSets(properties) {

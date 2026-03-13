@@ -7,13 +7,12 @@ function generateId() {
   return Math.random().toString(36).substring(2, 9)
 }
 
-/** Check all players for win condition and set winner if found */
+/** Check current player for win condition (win only on your own turn) */
 function applyWinCheck(state) {
   if (state.winner !== null && state.winner !== undefined) return state
-  for (let i = 0; i < state.players.length; i++) {
-    if (checkWinCondition(state.players[i])) {
-      return { ...state, winner: i }
-    }
+  const i = state.currentPlayerIndex
+  if (checkWinCondition(state.players[i])) {
+    return { ...state, winner: i }
   }
   return state
 }
@@ -80,7 +79,9 @@ export function drawCards(state) {
     discard = []
   }
 
-  const count = Math.min(2, deck.length)
+  const player = state.players[playerIndex]
+  const drawAmount = player.hand.length === 0 ? 5 : 2
+  const count = Math.min(drawAmount, deck.length)
   const drawn = deck.slice(0, count)
   deck = deck.slice(count)
 
@@ -190,10 +191,11 @@ export function discardCards(state, cardIds) {
       : p
   )
 
+  // Rule: excess cards go to bottom of draw pile, not discard pile
   return {
     ...state,
     players: updatedPlayers,
-    discard: [...state.discard, ...discarded],
+    deck: [...state.deck, ...discarded],
   }
 }
 
@@ -301,6 +303,7 @@ export function resolveHouse(state, cardId, color) {
   const playerIndex = state.currentPlayerIndex
   const player = state.players[playerIndex]
 
+  if (color === 'railroad' || color === 'utility') return state
   if (!isSetComplete(player.properties, color)) return state
 
   const card = player.hand.find(c => c.id === cardId)
@@ -331,6 +334,7 @@ export function resolveHotel(state, cardId, color) {
   const playerIndex = state.currentPlayerIndex
   const player = state.players[playerIndex]
 
+  if (color === 'railroad' || color === 'utility') return state
   if (!isSetComplete(player.properties, color)) return state
   if (!player.properties[color]?.hasHouse) return state
 
@@ -521,7 +525,10 @@ export function resolveForcedDeal(state, targetIndex, yourCardId, theirCardId) {
   let yourColor = null, yourCard = null
   for (const [clr, cards] of Object.entries(actor.properties)) {
     const found = cards.find(c => c.id === yourCardId)
-    if (found) { yourColor = clr; yourCard = found; break }
+    if (found) {
+      if (isSetComplete(actor.properties, clr)) return state
+      yourColor = clr; yourCard = found; break
+    }
   }
 
   let theirColor = null, theirCard = null

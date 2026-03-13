@@ -99,6 +99,7 @@ function TargetSelectModal() {
     const eligibleSets = Object.entries(currentPlayer.properties)
       .filter(([color, cards]) => {
         if (!cards || cards.length === 0) return false
+        if (color === 'railroad' || color === 'utility') return false
         if (!isSetComplete(currentPlayer.properties, color)) return false
         if (action === 'house' && hasHouse(currentPlayer.properties, color)) return false
         if (action === 'house' && hasHotel(currentPlayer.properties, color)) return false
