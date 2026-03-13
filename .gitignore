@@ -5,3 +5,6 @@ dist
 *.log
 .DS_Store
 coverage
+CLAUDE.md
+GAME_DESIGN.md
+
