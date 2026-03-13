@@ -108,9 +108,23 @@ function Lobby() {
   const [joined, setJoined] = useState(false)
   const [players, setPlayers] = useState([])
   const [myIndex, setMyIndex] = useState(-1)
+  const [connectionStatus, setConnectionStatus] = useState('disconnected')
 
   useEffect(() => {
     const socket = connectSocket()
+
+    socket.on('connect', () => {
+      setConnectionStatus('connected')
+    })
+
+    socket.on('connect_error', () => {
+      setConnectionStatus('failed')
+      addToast('Could not connect to game server. Make sure it is running.', 'error')
+    })
+
+    socket.on('disconnect', () => {
+      setConnectionStatus('disconnected')
+    })
 
     socket.on('room-update', ({ players: updatedPlayers }) => {
       setPlayers(updatedPlayers)
@@ -126,6 +140,9 @@ function Lobby() {
     })
 
     return () => {
+      socket.off('connect')
+      socket.off('connect_error')
+      socket.off('disconnect')
       socket.off('room-update')
       socket.off('game-state')
       socket.off('player-left')
@@ -171,10 +188,18 @@ function Lobby() {
     }
   }
 
+  const isFailed = connectionStatus === 'failed'
+  const statusColor = connectionStatus === 'connected' ? 'var(--color-success)' : isFailed ? 'var(--color-danger)' : 'var(--color-warning)'
+  const statusText = connectionStatus === 'connected' ? 'Connected' : isFailed ? 'Server unavailable' : 'Connecting...'
+
   if (!joined) {
     return (
       <div style={lobbyStyles.container}>
         <div style={lobbyStyles.title}>Multiplayer</div>
+        <div style={{ fontSize: '0.75rem', color: statusColor, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: statusColor, display: 'inline-block' }} />
+          {statusText}
+        </div>
         <div style={lobbyStyles.card}>
           <label style={lobbyStyles.label}>Your Name</label>
           <input

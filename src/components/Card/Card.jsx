@@ -75,7 +75,9 @@ function Card({ card, size = 'md', faceDown = false, selected = false, playable 
       }}
     >
       <span className={styles.valueBadge}>${card.value}M</span>
-      <span className={styles.typeBadge}>{card.type}</span>
+      <span className={styles.typeBadge}>
+        {card.type === 'property' ? 'PROP' : card.type === 'wild' ? 'WILD' : card.type === 'money' ? '$' : card.type.toUpperCase()}
+      </span>
       {renderCardContent()}
     </motion.div>
   )
