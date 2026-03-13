@@ -69,7 +69,10 @@ function WildColorModal() {
             />
           ))}
         </div>
-        <button className={styles.cancelButton} onClick={handleBank}>Bank as Money</button>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
+          <button className={styles.cancelButton} onClick={handleBank}>Bank as Money</button>
+        </div>
       </motion.div>
     </motion.div>
   )

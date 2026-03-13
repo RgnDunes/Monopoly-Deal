@@ -71,3 +71,12 @@
   right: -4px;
   z-index: 5;
 }
+
+.clickable {
+  cursor: pointer;
+  transition: transform var(--t-fast);
+}
+
+.clickable:hover {
+  transform: scale(1.3);
+}

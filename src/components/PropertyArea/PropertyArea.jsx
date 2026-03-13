@@ -1,7 +1,7 @@
 import PropertySet from './PropertySet.jsx'
 import styles from './PropertyArea.module.css'
 
-function PropertyArea({ properties = {}, onCardClick }) {
+function PropertyArea({ properties = {}, onCardClick, onEnhancementClick }) {
   const colorEntries = Object.entries(properties).filter(
     ([_color, cards]) => cards && cards.length > 0
   )
@@ -17,7 +17,8 @@ function PropertyArea({ properties = {}, onCardClick }) {
           key={color}
           color={color}
           cards={cards}
-          onCardClick={onCardClick}
+          onCardClick={onCardClick ? (card) => onCardClick(card, color) : undefined}
+          onEnhancementClick={onEnhancementClick}
         />
       ))}
     </div>

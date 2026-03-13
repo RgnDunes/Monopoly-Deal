@@ -15,7 +15,7 @@ const COLOR_MAP = {
   utility: 'var(--color-utility)',
 }
 
-function PropertySet({ color, cards = [], onCardClick }) {
+function PropertySet({ color, cards = [], onCardClick, onEnhancementClick }) {
   const config = PROPERTY_CONFIG[color]
   if (!config) return null
 
@@ -39,8 +39,24 @@ function PropertySet({ color, cards = [], onCardClick }) {
         />
       ))}
       {isComplete && <span className={styles.completeBadge}>Complete</span>}
-      {hasHouse && !hasHotel && <span className={styles.enhancementBadge}>🏠</span>}
-      {hasHotel && <span className={styles.enhancementBadge}>🏨</span>}
+      {hasHouse && !hasHotel && (
+        <span
+          className={`${styles.enhancementBadge} ${onEnhancementClick ? styles.clickable : ''}`}
+          onClick={onEnhancementClick ? () => onEnhancementClick(color, 'house') : undefined}
+          title="Click to bank house ($3M)"
+        >
+          🏠
+        </span>
+      )}
+      {hasHotel && (
+        <span
+          className={`${styles.enhancementBadge} ${onEnhancementClick ? styles.clickable : ''}`}
+          onClick={onEnhancementClick ? () => onEnhancementClick(color, 'hotel') : undefined}
+          title="Click to bank hotel ($4M)"
+        >
+          🏨
+        </span>
+      )}
     </div>
   )
 }

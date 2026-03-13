@@ -18,6 +18,9 @@ import {
   resolveBirthday as engineBirthday,
   resolvePayDebt as enginePayDebt,
   resolveForcedDeal as engineForcedDeal,
+  moveWild as engineMoveWild,
+  removeHouse as engineRemoveHouse,
+  removeHotel as engineRemoveHotel,
   getCurrentPlayer,
 } from '../engine/gameState.js'
 
@@ -89,14 +92,20 @@ const useGameStore = create((set, get) => ({
     return { game: enginePassGo(s.game) }
   }),
 
-  resolveDealBreaker: (targetIndex, color) => set(s => {
+  // Deal Breaker: play card + steal set in one atomic update
+  executeDealBreaker: (actionCardId, targetIndex, color) => set(s => {
     if (!s.game) return s
-    return { game: engineDealBreaker(s.game, targetIndex, color) }
+    const afterPlay = enginePlayAction(s.game, actionCardId)
+    const afterSteal = engineDealBreaker(afterPlay, targetIndex, color)
+    return { game: afterSteal }
   }),
 
-  resolveSlyDeal: (targetIndex, cardId) => set(s => {
+  // Sly Deal: play card + steal property in one atomic update
+  executeSlyDeal: (actionCardId, targetIndex, cardId) => set(s => {
     if (!s.game) return s
-    return { game: engineSlyDeal(s.game, targetIndex, cardId) }
+    const afterPlay = enginePlayAction(s.game, actionCardId)
+    const afterSteal = engineSlyDeal(afterPlay, targetIndex, cardId)
+    return { game: afterSteal }
   }),
 
   resolveJustSayNo: (jsnCount) => {
@@ -117,9 +126,29 @@ const useGameStore = create((set, get) => ({
     return { game: engineHotel(s.game, cardId, color) }
   }),
 
-  resolveForcedDeal: (targetIndex, yourCardId, theirCardId) => set(s => {
+  // Forced Deal: play card + swap properties in one atomic update
+  executeForcedDeal: (actionCardId, targetIndex, yourCardId, theirCardId) => set(s => {
     if (!s.game) return s
-    return { game: engineForcedDeal(s.game, targetIndex, yourCardId, theirCardId) }
+    const afterPlay = enginePlayAction(s.game, actionCardId)
+    const afterSwap = engineForcedDeal(afterPlay, targetIndex, yourCardId, theirCardId)
+    return { game: afterSwap }
+  }),
+
+  // Move wild card between property sets (free action)
+  moveWild: (cardId, fromColor, toColor) => set(s => {
+    if (!s.game) return s
+    return { game: engineMoveWild(s.game, cardId, fromColor, toColor) }
+  }),
+
+  // Remove house/hotel from property and bank the value
+  removeHouse: (color) => set(s => {
+    if (!s.game) return s
+    return { game: engineRemoveHouse(s.game, color) }
+  }),
+
+  removeHotel: (color) => set(s => {
+    if (!s.game) return s
+    return { game: engineRemoveHotel(s.game, color) }
   }),
 
   // Play action card (remove from hand, discard, uses 1 play)

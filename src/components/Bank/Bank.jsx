@@ -6,8 +6,10 @@ function Bank({ cards = [], onCardClick }) {
 
   return (
     <div className={styles.bank}>
-      <span className={styles.bankLabel}>Bank</span>
-      <span className={styles.bankTotal}>${total}M</span>
+      <div className={styles.bankHeader}>
+        <span className={styles.bankLabel}>Bank</span>
+        <span className={styles.bankTotal}>${total}M</span>
+      </div>
       {cards.length > 0 && (
         <div className={styles.bankCards}>
           {cards.map(card => (

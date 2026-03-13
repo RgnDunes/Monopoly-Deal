@@ -15,6 +15,8 @@ function GameBoard() {
   const bankCard = useGameStore(s => s.bankCard)
   const playPropertyCard = useGameStore(s => s.playPropertyCard)
   const endTurn = useGameStore(s => s.endTurn)
+  const removeHouse = useGameStore(s => s.removeHouse)
+  const removeHotel = useGameStore(s => s.removeHotel)
   const addToast = useUIStore(s => s.addToast)
   const showModal = useUIStore(s => s.showModal)
 
@@ -30,10 +32,9 @@ function GameBoard() {
       showModal('targetSelect', { action: 'forcedDeal', cardId: card.id })
     } else if (name === 'debt collector') {
       showModal('targetSelect', { action: 'debtCollector', cardId: card.id })
-    } else if (name === "it's my birthday") {
-      showModal('targetSelect', { action: 'birthday', cardId: card.id })
+    } else if (name.includes('birthday')) {
+      showModal('actionChoice', { card })
     } else if (name === 'just say no') {
-      // JSN can only be played reactively — banking is the only proactive option
       bankCard(card.id)
       addToast('Banked Just Say No as $4M (play it reactively when targeted)', 'info')
     } else if (name === 'house') {
@@ -41,7 +42,6 @@ function GameBoard() {
     } else if (name === 'hotel') {
       showModal('targetSelect', { action: 'hotel', cardId: card.id })
     } else if (name === 'double the rent') {
-      // Double the Rent must be played with a Rent card — bank it otherwise
       bankCard(card.id)
       addToast('Banked Double the Rent as $1M', 'info')
     } else {
@@ -86,6 +86,26 @@ function GameBoard() {
     }
   }, [game, bankCard, playPropertyCard, showModal, addToast, handleActionCard, handleRentCard])
 
+  // Click on a property card in the property area (for moving wilds)
+  const handlePropertyCardClick = useCallback((card, fromColor) => {
+    if (!game || game.turnPhase !== 'play') return
+    if (card.type === 'wild') {
+      showModal('targetSelect', { action: 'moveWild', card, fromColor })
+    }
+  }, [game, showModal])
+
+  // Click on house/hotel badge to bank it
+  const handleEnhancementClick = useCallback((color, type) => {
+    if (!game || game.turnPhase !== 'play') return
+    if (type === 'house') {
+      removeHouse(color)
+      addToast(`Banked house from ${color} as $3M`, 'success')
+    } else if (type === 'hotel') {
+      removeHotel(color)
+      addToast(`Banked hotel from ${color} as $4M`, 'success')
+    }
+  }, [game, removeHouse, removeHotel, addToast])
+
   const handleDraw = useCallback(() => {
     if (!game) return
     drawCards()
@@ -114,7 +134,7 @@ function GameBoard() {
   useEffect(() => {
     if (!game || game.turnPhase !== 'play' || game.playsRemaining > 0 || game.winner) return
     const pendingPayments = useGameStore.getState().pendingPayments
-    if (pendingPayments.length > 0) return // wait for payments to resolve
+    if (pendingPayments.length > 0) return
     const currentPlayer = game.players[game.currentPlayerIndex]
     const isBot = currentPlayer.name.toLowerCase().startsWith('bot') ||
                   currentPlayer.name.toLowerCase().startsWith('cpu')
@@ -122,7 +142,7 @@ function GameBoard() {
 
     autoEndRef.current = setTimeout(() => {
       const g = useGameStore.getState().game
-      if (!g || g.playsRemaining > 0) return
+      if (!g || g.playsRemaining > 0 || g.winner) return
       const cp = g.players[g.currentPlayerIndex]
       if (cp.hand.length > 7) {
         useUIStore.getState().showModal('discard', { needToDiscard: cp.hand.length - 7 })
@@ -189,7 +209,11 @@ function GameBoard() {
 
       <div className={styles.myArea}>
         <div className={styles.myProperties}>
-          <PropertyArea properties={currentPlayer.properties} />
+          <PropertyArea
+            properties={currentPlayer.properties}
+            onCardClick={handlePropertyCardClick}
+            onEnhancementClick={handleEnhancementClick}
+          />
         </div>
         <div className={styles.myBankAndHand}>
           <div className={styles.myBankWrapper}>

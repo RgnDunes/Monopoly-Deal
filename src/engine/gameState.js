@@ -1,9 +1,21 @@
 import { createDeck } from './deck.js'
 import { isSetComplete } from './properties.js'
+import { checkWinCondition } from './winCondition.js'
 import { calculateRent } from './rent.js'
 
 function generateId() {
   return Math.random().toString(36).substring(2, 9)
+}
+
+/** Check all players for win condition and set winner if found */
+function applyWinCheck(state) {
+  if (state.winner !== null && state.winner !== undefined) return state
+  for (let i = 0; i < state.players.length; i++) {
+    if (checkWinCondition(state.players[i])) {
+      return { ...state, winner: i }
+    }
+  }
+  return state
 }
 
 /**
@@ -142,11 +154,11 @@ export function playPropertyCard(state, cardId, color) {
     }
   })
 
-  return {
+  return applyWinCheck({
     ...state,
     players: updatedPlayers,
     playsRemaining: state.playsRemaining - 1,
-  }
+  })
 }
 
 /**
@@ -222,7 +234,7 @@ export function resolveDealBreaker(state, targetIndex, color) {
     return p
   })
 
-  return { ...state, players: updatedPlayers }
+  return applyWinCheck({ ...state, players: updatedPlayers })
 }
 
 /**
@@ -271,7 +283,7 @@ export function resolveSlyDeal(state, targetIndex, cardId) {
     return p
   })
 
-  return { ...state, players: updatedPlayers }
+  return applyWinCheck({ ...state, players: updatedPlayers })
 }
 
 /**
@@ -373,6 +385,65 @@ export function moveWild(state, cardId, fromColor, toColor) {
     return {
       ...p,
       properties: { ...p.properties, [fromColor]: newFrom, [toColor]: newTo },
+    }
+  })
+
+  return applyWinCheck({ ...state, players: updatedPlayers })
+}
+
+/**
+ * Remove a house from a property set and bank its value ($3M). Free action.
+ */
+export function removeHouse(state, color) {
+  const playerIndex = state.currentPlayerIndex
+  const player = state.players[playerIndex]
+  const colorCards = player.properties[color]
+  if (!colorCards?.hasHouse) return state
+
+  const updatedPlayers = state.players.map((p, i) => {
+    if (i !== playerIndex) return p
+    const newColorArray = [...p.properties[color]]
+    newColorArray.hasHouse = false
+    if (p.properties[color].hasHotel) newColorArray.hasHotel = true
+    const houseMoneyCard = {
+      id: `house-banked-${generateId()}`,
+      type: 'money',
+      name: '$3M',
+      value: 3,
+    }
+    return {
+      ...p,
+      bank: [...p.bank, houseMoneyCard],
+      properties: { ...p.properties, [color]: newColorArray },
+    }
+  })
+
+  return { ...state, players: updatedPlayers }
+}
+
+/**
+ * Remove a hotel from a property set and bank its value ($4M). Free action.
+ */
+export function removeHotel(state, color) {
+  const playerIndex = state.currentPlayerIndex
+  const player = state.players[playerIndex]
+  const colorCards = player.properties[color]
+  if (!colorCards?.hasHotel) return state
+
+  const updatedPlayers = state.players.map((p, i) => {
+    if (i !== playerIndex) return p
+    const newColorArray = [...p.properties[color]]
+    newColorArray.hasHotel = false
+    const hotelMoneyCard = {
+      id: `hotel-banked-${generateId()}`,
+      type: 'money',
+      name: '$4M',
+      value: 4,
+    }
+    return {
+      ...p,
+      bank: [...p.bank, hotelMoneyCard],
+      properties: { ...p.properties, [color]: newColorArray },
     }
   })
 
@@ -488,7 +559,7 @@ export function resolveForcedDeal(state, targetIndex, yourCardId, theirCardId) {
     return p
   })
 
-  return { ...state, players: updatedPlayers }
+  return applyWinCheck({ ...state, players: updatedPlayers })
 }
 
 /**

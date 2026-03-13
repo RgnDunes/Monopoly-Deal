@@ -11,6 +11,7 @@ function ActionChoiceModal() {
   const bankCard = useGameStore(s => s.bankCard)
   const playActionCard = useGameStore(s => s.playActionCard)
   const resolvePassGo = useGameStore(s => s.resolvePassGo)
+  const startBirthday = useGameStore(s => s.startBirthday)
 
   if (activeModal !== 'actionChoice' || !modalData) return null
 
@@ -22,6 +23,9 @@ function ActionChoiceModal() {
       playActionCard(card.id)
       resolvePassGo()
       addToast('Pass Go! Drew 2 extra cards', 'success')
+    } else if (name.includes('birthday')) {
+      startBirthday(card.id)
+      addToast("It's your birthday! Everyone owes $2M", 'info')
     }
     closeModal()
   }
@@ -35,6 +39,7 @@ function ActionChoiceModal() {
   const getActionDescription = () => {
     const name = card.name.toLowerCase()
     if (name === 'pass go') return 'Draw 2 extra cards'
+    if (name.includes('birthday')) return 'All opponents pay $2M each'
     return card.description || 'Play this card'
   }
 
