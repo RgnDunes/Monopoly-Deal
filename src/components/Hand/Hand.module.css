@@ -1,1 +1,48 @@
-/* Hand styles */
+.hand {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 8px 16px;
+  gap: 0;
+  min-height: 160px;
+  position: relative;
+}
+
+.hand > * {
+  margin-left: -20px;
+  transition: transform var(--t-fast);
+}
+
+.hand > *:first-child {
+  margin-left: 0;
+}
+
+.hand > *:hover {
+  z-index: 10;
+}
+
+.playsIndicator {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.playDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
+.playDot.active {
+  background: var(--color-primary);
+}
+
+.handDisabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

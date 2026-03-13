@@ -1,1 +1,37 @@
-/* Bank styles */
+.bank {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  min-height: 40px;
+}
+
+.bankLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bankTotal {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-money-accent);
+}
+
+.bankCards {
+  display: flex;
+  gap: 0;
+}
+
+.bankCards > * {
+  margin-left: -30px;
+}
+
+.bankCards > *:first-child {
+  margin-left: 0;
+}
