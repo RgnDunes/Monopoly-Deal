@@ -9,7 +9,7 @@
 }
 
 .hand > * {
-  margin-left: -20px;
+  margin-left: -12px;
   transition: transform var(--t-fast);
 }
 

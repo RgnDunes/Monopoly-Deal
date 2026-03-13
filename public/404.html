@@ -5,9 +5,11 @@
   <title>Monopoly Deal</title>
   <script>
     var l = window.location;
+    var base = l.pathname.split('/').slice(0, 2).join('/');
+    var pathAfterBase = l.pathname.slice(base.length);
     l.replace(l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-      l.pathname.split('/').slice(0, 1 + 1).join('/') + '/?/' +
-      l.pathname.slice(1).replace(/&/g, '~and~') +
+      base + '/?/' +
+      pathAfterBase.slice(1).replace(/&/g, '~and~') +
       (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
       l.hash);
   </script>
