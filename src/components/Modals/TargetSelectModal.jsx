@@ -17,10 +17,12 @@ function TargetSelectModal() {
   const resolveHouse = useGameStore(s => s.resolveHouse)
   const resolveHotel = useGameStore(s => s.resolveHotel)
   const playActionCard = useGameStore(s => s.playActionCard)
+  const resolveForcedDeal = useGameStore(s => s.resolveForcedDeal)
   const startRent = useGameStore(s => s.startRent)
   const startDebtCollector = useGameStore(s => s.startDebtCollector)
   const startBirthday = useGameStore(s => s.startBirthday)
   const [selectedPlayer, setSelectedPlayer] = useState(null)
+  const [theirCardId, setTheirCardId] = useState(null)
 
   if (activeModal !== 'targetSelect' || !modalData || !game) return null
 
@@ -294,6 +296,78 @@ function TargetSelectModal() {
             ))}
           </div>
           <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
+        </motion.div>
+      </motion.div>
+    )
+  }
+
+  // Step 2: For forced deal, select their card
+  if (action === 'forcedDeal' && theirCardId === null) {
+    const target = game.players[selectedPlayer]
+    const allCards = Object.entries(target.properties).flatMap(([color, cards]) =>
+      cards.map(c => ({ ...c, displayColor: color }))
+    )
+    if (allCards.length === 0) {
+      return (
+        <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
+          <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalTitle}>{target.name} has no properties</div>
+            <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
+          </motion.div>
+        </motion.div>
+      )
+    }
+    return (
+      <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
+        <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+          <div className={styles.modalTitle}>Choose their property to take</div>
+          <div className={styles.playerList}>
+            {allCards.map(card => (
+              <button key={card.id} className={styles.playerButton} onClick={() => setTheirCardId(card.id)}>
+                {card.name} ({card.displayColor})
+              </button>
+            ))}
+          </div>
+          <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
+        </motion.div>
+      </motion.div>
+    )
+  }
+
+  // Step 3: For forced deal, select your card to give
+  if (action === 'forcedDeal' && theirCardId !== null) {
+    const currentPlayer = game.players[game.currentPlayerIndex]
+    const myCards = Object.entries(currentPlayer.properties).flatMap(([color, cards]) =>
+      cards.map(c => ({ ...c, displayColor: color }))
+    )
+    if (myCards.length === 0) {
+      return (
+        <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
+          <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalTitle}>You have no properties to swap</div>
+            <button className={styles.cancelButton} onClick={() => { setTheirCardId(null); setSelectedPlayer(null) }}>Back</button>
+          </motion.div>
+        </motion.div>
+      )
+    }
+    return (
+      <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
+        <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
+          <div className={styles.modalTitle}>Choose your property to give</div>
+          <div className={styles.playerList}>
+            {myCards.map(card => (
+              <button key={card.id} className={styles.playerButton} onClick={() => {
+                playActionCard(modalData.cardId)
+                resolveForcedDeal(selectedPlayer, card.id, theirCardId)
+                addToast('Forced Deal! Swapped properties', 'success')
+                setTheirCardId(null)
+                closeModal()
+              }}>
+                {card.name} ({card.displayColor})
+              </button>
+            ))}
+          </div>
+          <button className={styles.cancelButton} onClick={() => setTheirCardId(null)}>Back</button>
         </motion.div>
       </motion.div>
     )

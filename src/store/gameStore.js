@@ -17,6 +17,7 @@ import {
   resolveDebtCollector as engineDebtCollector,
   resolveBirthday as engineBirthday,
   resolvePayDebt as enginePayDebt,
+  resolveForcedDeal as engineForcedDeal,
   getCurrentPlayer,
 } from '../engine/gameState.js'
 
@@ -114,6 +115,11 @@ const useGameStore = create((set, get) => ({
   resolveHotel: (cardId, color) => set(s => {
     if (!s.game) return s
     return { game: engineHotel(s.game, cardId, color) }
+  }),
+
+  resolveForcedDeal: (targetIndex, yourCardId, theirCardId) => set(s => {
+    if (!s.game) return s
+    return { game: engineForcedDeal(s.game, targetIndex, yourCardId, theirCardId) }
   }),
 
   // Play action card (remove from hand, discard, uses 1 play)

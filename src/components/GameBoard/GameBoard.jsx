@@ -55,7 +55,15 @@ function GameBoard() {
   }, [showModal])
 
   const handleCardClick = useCallback((card) => {
-    if (!game || game.turnPhase !== 'play' || game.playsRemaining <= 0) return
+    if (!game) return
+    if (game.turnPhase === 'draw') {
+      addToast('Draw your cards first!', 'warning')
+      return
+    }
+    if (game.playsRemaining <= 0) {
+      addToast('No plays left — end your turn or discard', 'warning')
+      return
+    }
 
     const currentPlayer = game.players[game.currentPlayerIndex]
     if (card.type === 'money') {

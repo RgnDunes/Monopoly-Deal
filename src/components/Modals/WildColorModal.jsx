@@ -24,6 +24,7 @@ function WildColorModal() {
   const closeModal = useUIStore(s => s.closeModal)
   const addToast = useUIStore(s => s.addToast)
   const playPropertyCard = useGameStore(s => s.playPropertyCard)
+  const bankCard = useGameStore(s => s.bankCard)
 
   if (activeModal !== 'wildColor' || !modalData) return null
 
@@ -32,6 +33,12 @@ function WildColorModal() {
   const handleSelect = (color) => {
     playPropertyCard(modalData.cardId, color)
     addToast(`Placed wild on ${color}`, 'success')
+    closeModal()
+  }
+
+  const handleBank = () => {
+    bankCard(modalData.cardId)
+    addToast(`Banked wild card as money`, 'success')
     closeModal()
   }
 
@@ -49,8 +56,8 @@ function WildColorModal() {
         animate={{ scale: 1 }}
         onClick={e => e.stopPropagation()}
       >
-        <div className={styles.modalTitle}>Choose Color</div>
-        <div className={styles.modalSubtitle}>Where should this wild card go?</div>
+        <div className={styles.modalTitle}>Wild Property</div>
+        <div className={styles.modalSubtitle}>Play as property or bank as money?</div>
         <div className={styles.colorGrid}>
           {colors.map(color => (
             <button
@@ -62,7 +69,7 @@ function WildColorModal() {
             />
           ))}
         </div>
-        <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
+        <button className={styles.cancelButton} onClick={handleBank}>Bank as Money</button>
       </motion.div>
     </motion.div>
   )
