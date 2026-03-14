@@ -101,10 +101,10 @@ function TargetSelectModal() {
         if (!cards || cards.length === 0) return false
         if (color === 'railroad' || color === 'utility') return false
         if (!isSetComplete(currentPlayer.properties, color)) return false
-        if (action === 'house' && hasHouse(currentPlayer.properties, color)) return false
-        if (action === 'house' && hasHotel(currentPlayer.properties, color)) return false
-        if (action === 'hotel' && !hasHouse(currentPlayer.properties, color)) return false
-        if (action === 'hotel' && hasHotel(currentPlayer.properties, color)) return false
+        if (action === 'house' && hasHouse(currentPlayer, color)) return false
+        if (action === 'house' && hasHotel(currentPlayer, color)) return false
+        if (action === 'hotel' && !hasHouse(currentPlayer, color)) return false
+        if (action === 'hotel' && hasHotel(currentPlayer, color)) return false
         return true
       })
 
@@ -161,7 +161,7 @@ function TargetSelectModal() {
               <div className={styles.modalSubtitle}>Choose a color to charge rent for</div>
               <div className={styles.playerList}>
                 {ownedColors.map(color => {
-                  const rent = calculateRent(currentPlayer.properties, color)
+                  const rent = calculateRent(currentPlayer, color)
                   return (
                     <button key={color} className={styles.playerButton} onClick={() => {
                       if (rent === 0) {

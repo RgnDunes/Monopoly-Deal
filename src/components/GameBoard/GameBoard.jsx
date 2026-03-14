@@ -3,6 +3,7 @@ import useGameStore from '../../store/gameStore.js'
 import useUIStore from '../../store/uiStore.js'
 import PlayerZone from './PlayerZone.jsx'
 import CenterPile from './CenterPile.jsx'
+import TurnIndicator from '../HUD/TurnIndicator.jsx'
 import Hand from '../Hand/Hand.jsx'
 import Bank from '../Bank/Bank.jsx'
 import PropertyArea from '../PropertyArea/PropertyArea.jsx'
@@ -182,6 +183,9 @@ function GameBoard() {
 
   return (
     <div className={styles.board}>
+      <div className={styles.topBar}>
+        <TurnIndicator />
+      </div>
       <div className={styles.opponentsRow}>
         {opponents.map(player => (
           <PlayerZone key={player.id} player={player} isOpponent />
@@ -211,6 +215,7 @@ function GameBoard() {
         <div className={styles.myProperties}>
           <PropertyArea
             properties={currentPlayer.properties}
+            player={currentPlayer}
             onCardClick={handlePropertyCardClick}
             onEnhancementClick={handleEnhancementClick}
           />

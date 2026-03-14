@@ -15,14 +15,14 @@ const COLOR_MAP = {
   utility: 'var(--color-utility)',
 }
 
-function PropertySet({ color, cards = [], onCardClick, onEnhancementClick }) {
+function PropertySet({ color, cards = [], player, onCardClick, onEnhancementClick }) {
   const config = PROPERTY_CONFIG[color]
   if (!config) return null
 
   const propertyCards = cards.filter(c => c.type === 'property' || c.type === 'wild')
   const isComplete = propertyCards.length >= config.setSize
-  const hasHouse = cards.hasHouse
-  const hasHotel = cards.hasHotel
+  const hasHouse = player?.houses?.[color] === true
+  const hasHotel = player?.hotels?.[color] === true
 
   return (
     <div className={`${styles.propertySet} ${isComplete ? styles.setComplete : ''}`}>

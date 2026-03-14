@@ -1,17 +1,12 @@
-/* TurnIndicator */
+/* TurnIndicator — inline in the board layout, not fixed */
 .turnIndicator {
-  position: fixed;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
   background: var(--bg-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 8px 20px;
-  display: flex;
+  padding: 6px 16px;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  z-index: 100;
+  gap: 10px;
   font-family: var(--font-game);
 }
 
@@ -42,20 +37,17 @@
 }
 
 .exitButton {
-  position: fixed;
-  top: 8px;
-  right: 12px;
   background: var(--color-danger);
   border: none;
   color: white;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: var(--radius-sm);
   font-family: var(--font-game);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   cursor: pointer;
-  z-index: 100;
   transition: background var(--t-fast);
+  margin-left: 8px;
 }
 
 .exitButton:hover {

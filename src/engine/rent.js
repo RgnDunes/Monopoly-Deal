@@ -1,7 +1,9 @@
 import { PROPERTY_CONFIG } from './cards.js'
 import { countPropertyCards, isSetComplete, hasHouse, hasHotel } from './properties.js'
 
-export function calculateRent(properties, color) {
+export function calculateRent(player, color) {
+  if (!player) return 0
+  const properties = player.properties
   if (!properties) return 0
 
   const config = PROPERTY_CONFIG[color]
@@ -14,8 +16,8 @@ export function calculateRent(properties, color) {
   let rent = config.rent[rentIndex]
 
   if (isSetComplete(properties, color)) {
-    if (hasHouse(properties, color)) rent += 3
-    if (hasHotel(properties, color)) rent += 4
+    if (hasHouse(player, color)) rent += 3
+    if (hasHotel(player, color)) rent += 4
   }
 
   return rent

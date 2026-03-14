@@ -17,18 +17,16 @@ function TurnIndicator() {
   }
 
   return (
-    <>
-      <div className={styles.turnIndicator}>
-        <span className={styles.turnName}>{currentPlayer.name}&apos;s Turn</span>
-        <span className={styles.turnPhase}>{game.turnPhase}</span>
-        {game.turnPhase === 'play' && (
-          <span className={styles.playsLeft}>{game.playsRemaining}</span>
-        )}
-      </div>
+    <div className={styles.turnIndicator}>
+      <span className={styles.turnName}>{currentPlayer.name}&apos;s Turn</span>
+      <span className={styles.turnPhase}>{game.turnPhase}</span>
+      {game.turnPhase === 'play' && (
+        <span className={styles.playsLeft}>{game.playsRemaining}</span>
+      )}
       <button className={styles.exitButton} onClick={handleExit}>
-        Exit Game
+        Exit
       </button>
-    </>
+    </div>
   )
 }
 

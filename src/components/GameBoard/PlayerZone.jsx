@@ -96,6 +96,11 @@ const s = {
     fontSize: '0.55rem',
     marginLeft: '1px',
   },
+  wildTag: {
+    fontSize: '0.55rem',
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '600',
+  },
   emptyText: {
     fontSize: '0.7rem',
     color: 'var(--color-text-muted)',
@@ -139,7 +144,11 @@ function PlayerZone({ player, isOpponent = false }) {
             {propEntries.map(([color, cards]) => {
               const config = { brown: 2, lightblue: 3, pink: 3, orange: 3, red: 3, yellow: 3, green: 3, darkblue: 2, railroad: 4, utility: 2 }
               const needed = config[color] || 3
-              const isComplete = cards.length >= needed
+              const standardCount = cards.filter(c => c.type === 'property').length
+              const wildCount = cards.filter(c => c.type === 'wild').length
+              const isComplete = cards.length >= needed && standardCount > 0
+              const hasHouse = player.houses?.[color]
+              const hasHotel = player.hotels?.[color]
               return (
                 <div
                   key={color}
@@ -150,8 +159,12 @@ function PlayerZone({ player, isOpponent = false }) {
                   }}
                 >
                   <span style={{ ...s.propDot, background: COLOR_CSS[color] || '#999' }} />
-                  {cards.length}/{needed}
+                  {standardCount}
+                  {wildCount > 0 && <span style={s.wildTag}>+{wildCount}W</span>}
+                  /{needed}
                   {isComplete && <span style={s.completeBadge}>&#10003;</span>}
+                  {hasHouse && !hasHotel && <span style={s.completeBadge}>🏠</span>}
+                  {hasHotel && <span style={s.completeBadge}>🏨</span>}
                 </div>
               )
             })}

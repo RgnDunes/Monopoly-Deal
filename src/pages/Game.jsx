@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useGameStore from '../store/gameStore.js'
 import GameBoard from '../components/GameBoard/GameBoard.jsx'
-import TurnIndicator from '../components/HUD/TurnIndicator.jsx'
 import Toast from '../components/HUD/Toast.jsx'
 import WildColorModal from '../components/Modals/WildColorModal.jsx'
 import ActionChoiceModal from '../components/Modals/ActionChoiceModal.jsx'
@@ -28,7 +27,6 @@ function Game() {
 
   return (
     <>
-      <TurnIndicator />
       <GameBoard />
       <Toast />
       <WildColorModal />

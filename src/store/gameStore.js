@@ -30,7 +30,15 @@ function loadSavedState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (!saved) return null
-    return JSON.parse(saved)
+    const parsed = JSON.parse(saved)
+    // Migrate old saves: ensure players have houses/hotels objects
+    if (parsed?.game?.players) {
+      for (const p of parsed.game.players) {
+        if (!p.houses) p.houses = {}
+        if (!p.hotels) p.hotels = {}
+      }
+    }
+    return parsed
   } catch {
     return null
   }

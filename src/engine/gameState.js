@@ -35,6 +35,8 @@ export function createInitialState(numPlayers) {
       hand,
       bank: [],
       properties: {},
+      houses: {},
+      hotels: {},
     })
   }
 
@@ -142,15 +144,12 @@ export function playPropertyCard(state, cardId, color) {
   const updatedPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p
     const existingCards = p.properties[targetColor] || []
-    const newColorArray = [...existingCards, { ...card, color: targetColor }]
-    if (existingCards.hasHouse) newColorArray.hasHouse = true
-    if (existingCards.hasHotel) newColorArray.hasHotel = true
     return {
       ...p,
       hand: p.hand.filter(c => c.id !== cardId),
       properties: {
         ...p.properties,
-        [targetColor]: newColorArray,
+        [targetColor]: [...existingCards, { ...card, color: targetColor }],
       },
     }
   })
@@ -215,13 +214,19 @@ export function resolveDealBreaker(state, targetIndex, color) {
   if (!isSetComplete(target.properties, color)) return state
 
   const stolenCards = [...(target.properties[color] || [])]
+  const stolenHouse = target.houses?.[color] === true
+  const stolenHotel = target.hotels?.[color] === true
   const playerIndex = state.currentPlayerIndex
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i === targetIndex) {
       const newProps = { ...p.properties }
       delete newProps[color]
-      return { ...p, properties: newProps }
+      const newHouses = { ...p.houses }
+      delete newHouses[color]
+      const newHotels = { ...p.hotels }
+      delete newHotels[color]
+      return { ...p, properties: newProps, houses: newHouses, hotels: newHotels }
     }
     if (i === playerIndex) {
       const existingCards = p.properties[color] || []
@@ -231,6 +236,8 @@ export function resolveDealBreaker(state, targetIndex, color) {
           ...p.properties,
           [color]: [...existingCards, ...stolenCards],
         },
+        houses: { ...p.houses, ...(stolenHouse ? { [color]: true } : {}) },
+        hotels: { ...p.hotels, ...(stolenHotel ? { [color]: true } : {}) },
       }
     }
     return p
@@ -311,16 +318,10 @@ export function resolveHouse(state, cardId, color) {
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p
-    const newColorArray = [...p.properties[color]]
-    newColorArray.hasHouse = true
-    if (p.properties[color].hasHotel) newColorArray.hasHotel = true
     return {
       ...p,
       hand: p.hand.filter(c => c.id !== cardId),
-      properties: {
-        ...p.properties,
-        [color]: newColorArray,
-      },
+      houses: { ...p.houses, [color]: true },
     }
   })
 
@@ -336,30 +337,17 @@ export function resolveHotel(state, cardId, color) {
 
   if (color === 'railroad' || color === 'utility') return state
   if (!isSetComplete(player.properties, color)) return state
-  if (!player.properties[color]?.hasHouse) return state
+  if (!player.houses?.[color]) return state
 
   const card = player.hand.find(c => c.id === cardId)
   if (!card) return state
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p
-    const newColorArray = [...p.properties[color]]
-    newColorArray.hasHotel = true
-    newColorArray.hasHouse = false
-    const houseMoneyCard = {
-      id: `house-to-bank-${generateId()}`,
-      type: 'money',
-      name: '$3M',
-      value: 3,
-    }
     return {
       ...p,
       hand: p.hand.filter(c => c.id !== cardId),
-      bank: [...p.bank, houseMoneyCard],
-      properties: {
-        ...p.properties,
-        [color]: newColorArray,
-      },
+      hotels: { ...p.hotels, [color]: true },
     }
   })
 
@@ -382,10 +370,6 @@ export function moveWild(state, cardId, fromColor, toColor) {
     if (i !== playerIndex) return p
     const newFrom = p.properties[fromColor].filter(c => c.id !== cardId)
     const newTo = [...(p.properties[toColor] || []), { ...card, color: toColor }]
-    if (p.properties[fromColor]?.hasHouse) newFrom.hasHouse = true
-    if (p.properties[fromColor]?.hasHotel) newFrom.hasHotel = true
-    if (p.properties[toColor]?.hasHouse) newTo.hasHouse = true
-    if (p.properties[toColor]?.hasHotel) newTo.hasHotel = true
     return {
       ...p,
       properties: { ...p.properties, [fromColor]: newFrom, [toColor]: newTo },
@@ -401,14 +385,12 @@ export function moveWild(state, cardId, fromColor, toColor) {
 export function removeHouse(state, color) {
   const playerIndex = state.currentPlayerIndex
   const player = state.players[playerIndex]
-  const colorCards = player.properties[color]
-  if (!colorCards?.hasHouse) return state
+  if (!player.houses?.[color]) return state
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p
-    const newColorArray = [...p.properties[color]]
-    newColorArray.hasHouse = false
-    if (p.properties[color].hasHotel) newColorArray.hasHotel = true
+    const newHouses = { ...p.houses }
+    delete newHouses[color]
     const houseMoneyCard = {
       id: `house-banked-${generateId()}`,
       type: 'money',
@@ -418,7 +400,7 @@ export function removeHouse(state, color) {
     return {
       ...p,
       bank: [...p.bank, houseMoneyCard],
-      properties: { ...p.properties, [color]: newColorArray },
+      houses: newHouses,
     }
   })
 
@@ -431,13 +413,12 @@ export function removeHouse(state, color) {
 export function removeHotel(state, color) {
   const playerIndex = state.currentPlayerIndex
   const player = state.players[playerIndex]
-  const colorCards = player.properties[color]
-  if (!colorCards?.hasHotel) return state
+  if (!player.hotels?.[color]) return state
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i !== playerIndex) return p
-    const newColorArray = [...p.properties[color]]
-    newColorArray.hasHotel = false
+    const newHotels = { ...p.hotels }
+    delete newHotels[color]
     const hotelMoneyCard = {
       id: `hotel-banked-${generateId()}`,
       type: 'money',
@@ -447,7 +428,7 @@ export function removeHotel(state, color) {
     return {
       ...p,
       bank: [...p.bank, hotelMoneyCard],
-      properties: { ...p.properties, [color]: newColorArray },
+      hotels: newHotels,
     }
   })
 
@@ -501,7 +482,7 @@ export function resolveBirthday(state) {
  */
 export function resolveRent(state, color, targetIndices, doubled) {
   const player = state.players[state.currentPlayerIndex]
-  let rent = calculateRent(player.properties, color)
+  let rent = calculateRent(player, color)
   if (doubled) rent *= 2
 
   const pendingPayments = targetIndices.map(ti => ({
@@ -603,10 +584,16 @@ export function resolvePayDebt(state, payingIndex, receivingIndex, cardIds) {
   const updatedPlayers = state.players.map((p, i) => {
     if (i === payingIndex) {
       const newProperties = { ...p.properties }
+      const newHouses = { ...p.houses }
+      const newHotels = { ...p.hotels }
       for (const [clr, ids] of Object.entries(propertyRemovals)) {
         newProperties[clr] = newProperties[clr].filter(c => !ids.includes(c.id))
+        if (newProperties[clr].length === 0) {
+          delete newHouses[clr]
+          delete newHotels[clr]
+        }
       }
-      return { ...p, bank: p.bank.filter(c => !bankCardIds.includes(c.id)), properties: newProperties }
+      return { ...p, bank: p.bank.filter(c => !bankCardIds.includes(c.id)), properties: newProperties, houses: newHouses, hotels: newHotels }
     }
     if (i === receivingIndex) {
       const newProperties = { ...p.properties }

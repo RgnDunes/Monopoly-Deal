@@ -22,10 +22,10 @@ export function getCompleteSets(properties) {
   return Object.keys(properties).filter(color => isSetComplete(properties, color))
 }
 
-export function hasHouse(properties, color) {
-  return properties[color]?.hasHouse === true
+export function hasHouse(player, color) {
+  return player.houses?.[color] === true
 }
 
-export function hasHotel(properties, color) {
-  return properties[color]?.hasHotel === true
+export function hasHotel(player, color) {
+  return player.hotels?.[color] === true
 }

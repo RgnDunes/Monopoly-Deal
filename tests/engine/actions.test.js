@@ -434,7 +434,7 @@ describe('resolveHouse', () => {
     const updatedPlayer = getCurrentPlayer(newState)
 
     // The brown set should now have a house
-    expect(updatedPlayer.properties.brown.hasHouse).toBe(true)
+    expect(updatedPlayer.houses.brown).toBe(true)
   })
 
   it('should not add a house to an incomplete set', () => {
@@ -453,7 +453,7 @@ describe('resolveHouse', () => {
 
     // Should not have a house on incomplete set
     const greenProps = updatedPlayer.properties.green
-    expect(!greenProps || !greenProps.hasHouse).toBe(true)
+    expect(!updatedPlayer.houses?.green).toBe(true)
   })
 })
 
@@ -464,8 +464,8 @@ describe('resolveHotel', () => {
 
     // Give complete darkblue set with a house
     const darkblueSet = buildCompleteSet('darkblue')
-    darkblueSet.hasHouse = true
     currentPlayer.properties.darkblue = darkblueSet
+    currentPlayer.houses = { darkblue: true }
 
     const hotelCard = mockActionCard('Hotel', 4, 0)
     currentPlayer.hand.push(hotelCard)
@@ -473,7 +473,7 @@ describe('resolveHotel', () => {
     const newState = resolveHotel(state, hotelCard.id, 'darkblue')
     const updatedPlayer = getCurrentPlayer(newState)
 
-    expect(updatedPlayer.properties.darkblue.hasHotel).toBe(true)
+    expect(updatedPlayer.hotels.darkblue).toBe(true)
   })
 
   it('should not add a hotel if the set does not have a house', () => {
@@ -491,27 +491,27 @@ describe('resolveHotel', () => {
     const updatedPlayer = getCurrentPlayer(newState)
 
     const darkblueProps = updatedPlayer.properties.darkblue
-    expect(!darkblueProps || !darkblueProps.hasHotel).toBe(true)
+    expect(!updatedPlayer.hotels?.darkblue).toBe(true)
   })
 
-  it('should move the house value to the bank when hotel is placed', () => {
+  it('should keep the house when hotel is placed', () => {
     const state = createInitialState(2)
     const currentPlayer = getCurrentPlayer(state)
 
     // Give complete brown set with a house
     const brownSet = buildCompleteSet('brown')
-    brownSet.hasHouse = true
     currentPlayer.properties.brown = brownSet
+    currentPlayer.houses = { brown: true }
 
     const hotelCard = mockActionCard('Hotel', 4, 0)
     currentPlayer.hand.push(hotelCard)
 
-    const bankSizeBefore = currentPlayer.bank.length
     const newState = resolveHotel(state, hotelCard.id, 'brown')
     const updatedPlayer = getCurrentPlayer(newState)
 
-    // House should be moved to bank (bank grows by 1 -- the house card)
-    expect(updatedPlayer.bank.length).toBeGreaterThanOrEqual(bankSizeBefore)
+    // Both house and hotel should be present
+    expect(updatedPlayer.houses.brown).toBe(true)
+    expect(updatedPlayer.hotels.brown).toBe(true)
   })
 })
 
