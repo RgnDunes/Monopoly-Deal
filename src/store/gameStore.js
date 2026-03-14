@@ -25,13 +25,19 @@ import {
 } from '../engine/gameState.js'
 
 const STORAGE_KEY = 'monopoly-deal-game'
+const SAVE_VERSION = 2
 
 function loadSavedState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (!saved) return null
     const parsed = JSON.parse(saved)
-    // Migrate old saves: ensure players have houses/hotels objects
+    // Reject saves from older versions to avoid stale/incompatible state
+    if (parsed?.version !== SAVE_VERSION) {
+      localStorage.removeItem(STORAGE_KEY)
+      return null
+    }
+    // Migrate: ensure players have houses/hotels objects
     if (parsed?.game?.players) {
       for (const p of parsed.game.players) {
         if (!p.houses) p.houses = {}
@@ -47,6 +53,7 @@ function loadSavedState() {
 function saveState(state) {
   try {
     const toSave = {
+      version: SAVE_VERSION,
       game: state.game,
       myPlayerIndex: state.myPlayerIndex,
       isLocalGame: state.isLocalGame,
