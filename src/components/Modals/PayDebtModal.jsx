@@ -2,14 +2,8 @@ import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import useUIStore from '../../store/uiStore.js'
 import useGameStore from '../../store/gameStore.js'
-import { PROPERTY_CONFIG } from '../../engine/cards.js'
+import Card from '../Card/Card.jsx'
 import styles from './Modals.module.css'
-
-const COLOR_MAP = {
-  brown: '#955436', lightblue: '#aae0fa', pink: '#d93a96', orange: '#f7941d',
-  red: '#ed1b24', yellow: '#fef200', green: '#1fb25a', darkblue: '#0072bb',
-  railroad: '#2d2d2d', utility: '#9e9e9e',
-}
 
 function PayDebtModal() {
   const game = useGameStore(s => s.game)
@@ -38,11 +32,17 @@ function PayDebtModal() {
 
   const amountOwed = payment.amount || 0
 
+  const bankCards = payer.bank.map(c => ({ ...c, source: 'bank' }))
+  const propertyCardsByColor = Object.entries(payer.properties)
+    .filter(([, cards]) => cards && cards.length > 0)
+    .map(([color, cards]) => ({
+      color,
+      cards: cards.map(c => ({ ...c, source: 'property', fromColor: color })),
+    }))
+
   const allPayableCards = [
-    ...payer.bank.map(c => ({ ...c, source: 'bank' })),
-    ...Object.entries(payer.properties).flatMap(([color, cards]) =>
-      cards.map(c => ({ ...c, source: 'property', fromColor: color }))
-    ),
+    ...bankCards,
+    ...propertyCardsByColor.flatMap(g => g.cards),
   ]
 
   // If payer has nothing, auto-skip
@@ -98,50 +98,46 @@ function PayDebtModal() {
         animate={{ scale: 1 }}
       >
         <div className={styles.modalTitle}>{payer.name} — Pay ${amountOwed}M to {collector.name}</div>
-        <div className={styles.modalSubtitle}>Select cards to pay with (no change given)</div>
-        <div className={styles.playerList}>
-          {allPayableCards.map(card => {
-            const isSelected = selectedIds.includes(card.id)
-            const color = card.fromColor || card.color
-            const setCount = color && payer.properties[color] ? payer.properties[color].length : 0
-            const setSize = color ? (PROPERTY_CONFIG[color]?.setSize || 0) : 0
-            const bgColor = color ? COLOR_MAP[color] : null
+        <div className={styles.modalSubtitle}>Tap cards to select (no change given)</div>
 
-            let label
-            if (card.source === 'bank') {
-              label = `${card.name} ($${card.value}M) — bank`
-            } else {
-              label = `${color} ($${card.value}M) — ${setCount}/${setSize} cards`
-            }
+        {bankCards.length > 0 && (
+          <div className={styles.paySection}>
+            <div className={styles.paySectionLabel}>Bank</div>
+            <div className={styles.payCardGrid}>
+              {bankCards.map(card => (
+                <Card
+                  key={card.id}
+                  card={card}
+                  size="sm"
+                  selected={selectedIds.includes(card.id)}
+                  onClick={() => toggleCard(card.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-            return (
-              <button
-                key={card.id}
-                className={styles.playerButton}
-                style={{
-                  borderColor: isSelected ? 'var(--color-primary)' : undefined,
-                  background: isSelected ? 'rgba(99,102,241,0.15)' : undefined,
-                }}
-                onClick={() => toggleCard(card.id)}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {card.source === 'property' && bgColor && (
-                    <span style={{
-                      width: 14, height: 14, borderRadius: 3,
-                      background: bgColor, border: '1px solid rgba(255,255,255,0.3)',
-                      flexShrink: 0,
-                    }} />
-                  )}
-                  {label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        {propertyCardsByColor.map(({ color, cards }) => (
+          <div key={color} className={styles.paySection}>
+            <div className={styles.paySectionLabel}>{color}</div>
+            <div className={styles.payCardGrid}>
+              {cards.map(card => (
+                <Card
+                  key={card.id}
+                  card={card}
+                  size="sm"
+                  selected={selectedIds.includes(card.id)}
+                  onClick={() => toggleCard(card.id)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
         <div className={styles.payTotal}>
           Selected: ${selectedTotal}M / ${amountOwed}M needed
         </div>
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+        <div className={styles.payActions}>
           <button
             className={styles.primaryButton}
             disabled={!canPay}
@@ -154,8 +150,7 @@ function PayDebtModal() {
           </button>
           {payer.hand.some(c => c.name?.toLowerCase() === 'just say no') && (
             <button
-              className={styles.jsnBlock || styles.primaryButton}
-              style={{ background: 'var(--color-danger)' }}
+              className={styles.jsnBlock}
               onClick={() => {
                 jsnForPayment(payment.fromIndex)
                 addToast(`${payer.name} played Just Say No!`, 'warning')
