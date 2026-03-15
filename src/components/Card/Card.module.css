@@ -4,6 +4,7 @@
   height: var(--card-h-md);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
+  background: var(--bg-card);
   cursor: pointer;
   transition: transform var(--t-fast), box-shadow var(--t-fast);
   user-select: none;
