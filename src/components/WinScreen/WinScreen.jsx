@@ -4,28 +4,21 @@ import ReactConfetti from 'react-confetti'
 import useGameStore from '../../store/gameStore.js'
 import styles from './WinScreen.module.css'
 
-const WIN_MEMES = [
-  { url: 'https://i.imgflip.com/2/1bhf.jpg', alt: 'Deal with it' },
-  { url: 'https://i.imgflip.com/2/26am.jpg', alt: 'Success Kid' },
-  { url: 'https://i.imgflip.com/2/1bh8.jpg', alt: 'Aww yeah' },
-  { url: 'https://i.imgflip.com/2/1bij.jpg', alt: 'Thumbs up' },
-  { url: 'https://i.imgflip.com/2/1otk96.jpg', alt: 'Roll Safe think about it' },
-]
-
-const LOSER_MEMES = [
-  { url: 'https://i.imgflip.com/2/21uy0f.jpg', alt: 'Crying Michael Jordan' },
-  { url: 'https://i.imgflip.com/2/2cp1.jpg', alt: 'Waiting skeleton' },
-  { url: 'https://i.imgflip.com/2/261o.jpg', alt: 'First time?' },
+const MEMES = [
+  { url: 'https://i.imgflip.com/2/4pxhx0.jpg', alt: 'Hera Pheri - Paisa hi paisa hoga' },
+  { url: 'https://i.imgflip.com/2/58eojf.jpg', alt: 'Baburao Ganpatrao Apte' },
+  { url: 'https://i.imgflip.com/2/3igo47.jpg', alt: 'Phir Hera Pheri meme' },
+  { url: 'https://i.imgflip.com/2/52flte.jpg', alt: 'Jethalal celebration' },
+  { url: 'https://i.imgflip.com/2/5c7lwq.jpg', alt: 'Munna Bhai MBBS' },
+  { url: 'https://i.imgflip.com/2/7qvf1o.jpg', alt: 'Indian meme' },
+  { url: 'https://i.imgflip.com/2/6olfr5.jpg', alt: 'Desi celebration' },
 ]
 
 function WinScreen() {
   const game = useGameStore(s => s.game)
   const resetGame = useGameStore(s => s.resetGame)
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
-  const [meme] = useState(() => {
-    const pool = Math.random() > 0.3 ? WIN_MEMES : LOSER_MEMES
-    return pool[Math.floor(Math.random() * pool.length)]
-  })
+  const [meme] = useState(() => MEMES[Math.floor(Math.random() * MEMES.length)])
 
   useEffect(() => {
     const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight })
