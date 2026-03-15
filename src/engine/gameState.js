@@ -271,13 +271,18 @@ export function resolveSlyDeal(state, targetIndex, cardId) {
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i === targetIndex) {
-      return {
-        ...p,
-        properties: {
-          ...p.properties,
-          [foundColor]: p.properties[foundColor].filter(c => c.id !== cardId),
-        },
+      const remaining = p.properties[foundColor].filter(c => c.id !== cardId)
+      const newProperties = { ...p.properties }
+      const newHouses = { ...p.houses }
+      const newHotels = { ...p.hotels }
+      if (remaining.length === 0) {
+        delete newProperties[foundColor]
+        delete newHouses[foundColor]
+        delete newHotels[foundColor]
+      } else {
+        newProperties[foundColor] = remaining
       }
+      return { ...p, properties: newProperties, houses: newHouses, hotels: newHotels }
     }
     if (i === playerIndex) {
       const existingCards = p.properties[foundColor] || []
@@ -370,10 +375,17 @@ export function moveWild(state, cardId, fromColor, toColor) {
     if (i !== playerIndex) return p
     const newFrom = p.properties[fromColor].filter(c => c.id !== cardId)
     const newTo = [...(p.properties[toColor] || []), { ...card, color: toColor }]
-    return {
-      ...p,
-      properties: { ...p.properties, [fromColor]: newFrom, [toColor]: newTo },
+    const newProperties = { ...p.properties, [toColor]: newTo }
+    const newHouses = { ...p.houses }
+    const newHotels = { ...p.hotels }
+    if (newFrom.length === 0) {
+      delete newProperties[fromColor]
+      delete newHouses[fromColor]
+      delete newHotels[fromColor]
+    } else {
+      newProperties[fromColor] = newFrom
     }
+    return { ...p, properties: newProperties, houses: newHouses, hotels: newHotels }
   })
 
   return applyWinCheck({ ...state, players: updatedPlayers })
@@ -525,24 +537,34 @@ export function resolveForcedDeal(state, targetIndex, yourCardId, theirCardId) {
 
   const updatedPlayers = state.players.map((p, i) => {
     if (i === playerIndex) {
-      return {
-        ...p,
-        properties: {
-          ...p.properties,
-          [yourColor]: p.properties[yourColor].filter(c => c.id !== yourCardId),
-          [theirColor]: [...(p.properties[theirColor] || []), theirCard],
-        },
+      const newProperties = { ...p.properties }
+      const newHouses = { ...p.houses }
+      const newHotels = { ...p.hotels }
+      const remaining = p.properties[yourColor].filter(c => c.id !== yourCardId)
+      if (remaining.length === 0) {
+        delete newProperties[yourColor]
+        delete newHouses[yourColor]
+        delete newHotels[yourColor]
+      } else {
+        newProperties[yourColor] = remaining
       }
+      newProperties[theirColor] = [...(newProperties[theirColor] || []), theirCard]
+      return { ...p, properties: newProperties, houses: newHouses, hotels: newHotels }
     }
     if (i === targetIndex) {
-      return {
-        ...p,
-        properties: {
-          ...p.properties,
-          [theirColor]: p.properties[theirColor].filter(c => c.id !== theirCardId),
-          [yourColor]: [...(p.properties[yourColor] || []), yourCard],
-        },
+      const newProperties = { ...p.properties }
+      const newHouses = { ...p.houses }
+      const newHotels = { ...p.hotels }
+      const remaining = p.properties[theirColor].filter(c => c.id !== theirCardId)
+      if (remaining.length === 0) {
+        delete newProperties[theirColor]
+        delete newHouses[theirColor]
+        delete newHotels[theirColor]
+      } else {
+        newProperties[theirColor] = remaining
       }
+      newProperties[yourColor] = [...(newProperties[yourColor] || []), yourCard]
+      return { ...p, properties: newProperties, houses: newHouses, hotels: newHotels }
     }
     return p
   })
@@ -589,6 +611,7 @@ export function resolvePayDebt(state, payingIndex, receivingIndex, cardIds) {
       for (const [clr, ids] of Object.entries(propertyRemovals)) {
         newProperties[clr] = newProperties[clr].filter(c => !ids.includes(c.id))
         if (newProperties[clr].length === 0) {
+          delete newProperties[clr]
           delete newHouses[clr]
           delete newHotels[clr]
         }

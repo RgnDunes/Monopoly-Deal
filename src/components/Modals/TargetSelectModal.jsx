@@ -13,9 +13,7 @@ function TargetSelectModal() {
   const addToast = useUIStore(s => s.addToast)
   const game = useGameStore(s => s.game)
   const bankCard = useGameStore(s => s.bankCard)
-  const executeDealBreaker = useGameStore(s => s.executeDealBreaker)
-  const executeSlyDeal = useGameStore(s => s.executeSlyDeal)
-  const executeForcedDeal = useGameStore(s => s.executeForcedDeal)
+  const initTargetedAction = useGameStore(s => s.initTargetedAction)
   const resolveHouse = useGameStore(s => s.resolveHouse)
   const resolveHotel = useGameStore(s => s.resolveHotel)
   const moveWild = useGameStore(s => s.moveWild)
@@ -161,18 +159,20 @@ function TargetSelectModal() {
               <div className={styles.modalSubtitle}>Choose a color to charge rent for</div>
               <div className={styles.playerList}>
                 {ownedColors.map(color => {
-                  const rent = calculateRent(currentPlayer, color)
+                  const baseRent = calculateRent(currentPlayer, color)
+                  const isDoubled = modalData.doubled === true
+                  const displayRent = isDoubled ? baseRent * 2 : baseRent
                   return (
                     <button key={color} className={styles.playerButton} onClick={() => {
-                      if (rent === 0) {
+                      if (baseRent === 0) {
                         addToast(`You have no ${color} properties — can't charge rent!`, 'warning')
                         return
                       }
-                      startRent(modalData.cardId, color)
-                      addToast(`Charging $${rent}M rent for ${color}!`, 'success')
+                      startRent(modalData.cardId, color, isDoubled, modalData.doubleCardId)
+                      addToast(`Charging $${displayRent}M${isDoubled ? ' (DOUBLED!)' : ''} rent for ${color}!`, 'success')
                       closeModal()
                     }}>
-                      {color} — ${rent}M rent
+                      {color} — ${displayRent}M rent{isDoubled ? ' (2x!)' : ''}
                     </button>
                   )
                 })}
@@ -231,6 +231,11 @@ function TargetSelectModal() {
               )
             })}
           </div>
+          {action === 'debtCollector' && opponents.every(p => getPayableTotal(p) === 0) && (
+            <div className={styles.modalSubtitle} style={{ color: 'var(--color-warning)', marginTop: '8px' }}>
+              No opponents have assets to collect from.
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
             <button className={styles.cancelButton} onClick={handleBankInstead}>Bank as Money</button>
@@ -263,8 +268,8 @@ function TargetSelectModal() {
           <div className={styles.playerList}>
             {sets.map(([color, cards]) => (
               <button key={color} className={styles.playerButton} onClick={() => {
-                executeDealBreaker(modalData.cardId, selectedPlayer, color)
-                addToast(`Deal Breaker! Stole ${color} set (${cards.length} cards)`, 'success')
+                initTargetedAction(modalData.cardId, 'dealBreaker', { targetIndex: selectedPlayer, color })
+                addToast(`Deal Breaker! Targeting ${color} set (${cards.length} cards)`, 'success')
                 closeModal()
               }}>
                 {color} ({cards.length} cards)
@@ -290,8 +295,8 @@ function TargetSelectModal() {
           <div className={styles.playerList}>
             {allCards.map(card => (
               <button key={card.id} className={styles.playerButton} onClick={() => {
-                executeSlyDeal(modalData.cardId, selectedPlayer, card.id)
-                addToast('Sly Deal! Stole a property', 'success')
+                initTargetedAction(modalData.cardId, 'slyDeal', { targetIndex: selectedPlayer, cardId: card.id })
+                addToast('Sly Deal! Targeting a property', 'success')
                 closeModal()
               }}>
                 {card.name} ({card.displayColor})
@@ -359,8 +364,8 @@ function TargetSelectModal() {
           <div className={styles.playerList}>
             {myCards.map(card => (
               <button key={card.id} className={styles.playerButton} onClick={() => {
-                executeForcedDeal(modalData.cardId, selectedPlayer, card.id, theirCardId)
-                addToast('Forced Deal! Swapped properties', 'success')
+                initTargetedAction(modalData.cardId, 'forcedDeal', { targetIndex: selectedPlayer, yourCardId: card.id, theirCardId })
+                addToast('Forced Deal! Swapping properties', 'success')
                 setTheirCardId(null)
                 closeModal()
               }}>

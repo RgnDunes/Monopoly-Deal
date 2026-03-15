@@ -36,15 +36,19 @@ function GameBoard() {
     } else if (name.includes('birthday')) {
       showModal('actionChoice', { card })
     } else if (name === 'just say no') {
-      bankCard(card.id)
-      addToast('Banked Just Say No as $4M (play it reactively when targeted)', 'info')
+      showModal('actionChoice', { card, subAction: 'justSayNo' })
     } else if (name === 'house') {
       showModal('targetSelect', { action: 'house', cardId: card.id })
     } else if (name === 'hotel') {
       showModal('targetSelect', { action: 'hotel', cardId: card.id })
     } else if (name === 'double the rent') {
-      bankCard(card.id)
-      addToast('Banked Double the Rent as $1M', 'info')
+      const rentCards = currentPlayer.hand.filter(c => c.type === 'rent' && c.id !== card.id)
+      if (rentCards.length > 0 && game.playsRemaining >= 2) {
+        showModal('actionChoice', { card, subAction: 'doubleTheRent', rentCards })
+      } else {
+        bankCard(card.id)
+        addToast('Banked Double the Rent as $1M (no rent cards or not enough plays)', 'info')
+      }
     } else {
       bankCard(card.id)
       addToast(`Banked ${card.name} as money`, 'success')

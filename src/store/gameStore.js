@@ -59,6 +59,7 @@ function saveState(state) {
       isLocalGame: state.isLocalGame,
       playerNames: state.playerNames,
       pendingPayments: state.pendingPayments,
+      pendingAction: state.pendingAction,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
   } catch { /* ignore storage errors */ }
@@ -72,6 +73,7 @@ const useGameStore = create((set, get) => ({
   isLocalGame: saved?.isLocalGame || false,
   playerNames: saved?.playerNames || [],
   pendingPayments: saved?.pendingPayments || [],
+  pendingAction: saved?.pendingAction || null,
 
   // Initialize local game
   initLocalGame: (names) => {
@@ -192,14 +194,17 @@ const useGameStore = create((set, get) => ({
     return { game: enginePlayAction(s.game, cardId) }
   }),
 
-  startRent: (cardId, color) => {
+  startRent: (cardId, color, doubled, doubleCardId) => {
     const { game } = get()
     if (!game) return
-    const newState = enginePlayAction(game, cardId)
+    let newState = enginePlayAction(game, cardId)
+    if (doubled && doubleCardId) {
+      newState = enginePlayAction(newState, doubleCardId)
+    }
     const opponents = newState.players
       .map((_, i) => i)
       .filter(i => i !== newState.currentPlayerIndex)
-    const { pendingPayments } = engineResolveRent(newState, color, opponents, false)
+    const { pendingPayments } = engineResolveRent(newState, color, opponents, doubled || false)
     set({ game: newState, pendingPayments })
   },
 
@@ -230,12 +235,147 @@ const useGameStore = create((set, get) => ({
     pendingPayments: s.pendingPayments.slice(1),
   })),
 
+  // Initiate a targeted action with JSN check
+  initTargetedAction: (actionCardId, actionType, params) => {
+    const { game } = get()
+    if (!game) return
+    const afterPlay = enginePlayAction(game, actionCardId)
+    const targetIndex = params.targetIndex
+    const target = afterPlay.players[targetIndex]
+    const hasJSN = target.hand.some(c => c.name?.toLowerCase() === 'just say no')
+
+    if (hasJSN) {
+      set({
+        game: afterPlay,
+        pendingAction: {
+          type: actionType,
+          ...params,
+          attackerIndex: afterPlay.currentPlayerIndex,
+          jsnChainCount: 0,
+        },
+      })
+    } else {
+      let result
+      switch (actionType) {
+        case 'dealBreaker':
+          result = engineDealBreaker(afterPlay, params.targetIndex, params.color)
+          break
+        case 'slyDeal':
+          result = engineSlyDeal(afterPlay, params.targetIndex, params.cardId)
+          break
+        case 'forcedDeal':
+          result = engineForcedDeal(afterPlay, params.targetIndex, params.yourCardId, params.theirCardId)
+          break
+        default:
+          result = afterPlay
+      }
+      set({ game: result })
+    }
+  },
+
+  // Accept the pending action (current responder doesn't play JSN)
+  acceptPendingAction: () => {
+    const { pendingAction, game } = get()
+    if (!pendingAction || !game) return
+
+    const isTargetTurn = pendingAction.jsnChainCount % 2 === 0
+    if (isTargetTurn) {
+      let result
+      switch (pendingAction.type) {
+        case 'dealBreaker':
+          result = engineDealBreaker(game, pendingAction.targetIndex, pendingAction.color)
+          break
+        case 'slyDeal':
+          result = engineSlyDeal(game, pendingAction.targetIndex, pendingAction.cardId)
+          break
+        case 'forcedDeal':
+          result = engineForcedDeal(game, pendingAction.targetIndex, pendingAction.yourCardId, pendingAction.theirCardId)
+          break
+        default:
+          result = game
+      }
+      set({ game: result, pendingAction: null })
+    } else {
+      set({ pendingAction: null })
+    }
+  },
+
+  // Play JSN in the chain
+  playJSNInChain: () => {
+    const { pendingAction, game } = get()
+    if (!pendingAction || !game) return
+
+    const isTargetTurn = pendingAction.jsnChainCount % 2 === 0
+    const responderIndex = isTargetTurn ? pendingAction.targetIndex : pendingAction.attackerIndex
+    const responder = game.players[responderIndex]
+
+    const jsnCard = responder.hand.find(c => c.name?.toLowerCase() === 'just say no')
+    if (!jsnCard) return
+
+    const updatedPlayers = game.players.map((p, i) => {
+      if (i !== responderIndex) return p
+      return { ...p, hand: p.hand.filter(c => c.id !== jsnCard.id) }
+    })
+    const newGame = { ...game, players: updatedPlayers, discard: [...game.discard, jsnCard] }
+    const newCount = pendingAction.jsnChainCount + 1
+
+    const nextIsTarget = newCount % 2 === 0
+    const nextResponderIndex = nextIsTarget ? pendingAction.targetIndex : pendingAction.attackerIndex
+    const nextResponder = newGame.players[nextResponderIndex]
+    const nextHasJSN = nextResponder.hand.some(c => c.name?.toLowerCase() === 'just say no')
+
+    if (nextHasJSN) {
+      set({
+        game: newGame,
+        pendingAction: { ...pendingAction, jsnChainCount: newCount },
+      })
+    } else {
+      if (newCount % 2 === 1) {
+        set({ game: newGame, pendingAction: null })
+      } else {
+        let result
+        switch (pendingAction.type) {
+          case 'dealBreaker':
+            result = engineDealBreaker(newGame, pendingAction.targetIndex, pendingAction.color)
+            break
+          case 'slyDeal':
+            result = engineSlyDeal(newGame, pendingAction.targetIndex, pendingAction.cardId)
+            break
+          case 'forcedDeal':
+            result = engineForcedDeal(newGame, pendingAction.targetIndex, pendingAction.yourCardId, pendingAction.theirCardId)
+            break
+          default:
+            result = newGame
+        }
+        set({ game: result, pendingAction: null })
+      }
+    }
+  },
+
+  // Use JSN to cancel a pending payment
+  useJSNForPayment: (payerIndex) => {
+    const { game, pendingPayments } = get()
+    if (!game) return
+    const payer = game.players[payerIndex]
+    const jsnCard = payer.hand.find(c => c.name?.toLowerCase() === 'just say no')
+    if (!jsnCard) return
+
+    const updatedPlayers = game.players.map((p, i) => {
+      if (i !== payerIndex) return p
+      return { ...p, hand: p.hand.filter(c => c.id !== jsnCard.id) }
+    })
+    set({
+      game: { ...game, players: updatedPlayers, discard: [...game.discard, jsnCard] },
+      pendingPayments: pendingPayments.slice(1),
+    })
+  },
+
   setMyPlayerIndex: (index) => set({ myPlayerIndex: index }),
   setGame: (game) => set({ game }),
 
   resetGame: () => {
     localStorage.removeItem(STORAGE_KEY)
-    set({ game: null, myPlayerIndex: 0, isLocalGame: false, playerNames: [], pendingPayments: [] })
+    set({ game: null, myPlayerIndex: 0, isLocalGame: false, playerNames: [], pendingPayments: [], pendingAction: null })
   },
 }))
 

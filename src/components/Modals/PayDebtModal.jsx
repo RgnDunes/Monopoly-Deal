@@ -9,6 +9,7 @@ function PayDebtModal() {
   const pendingPayments = useGameStore(s => s.pendingPayments)
   const processPayment = useGameStore(s => s.processPayment)
   const skipPayment = useGameStore(s => s.skipPayment)
+  const useJSNForPayment = useGameStore(s => s.useJSNForPayment)
   const addToast = useUIStore(s => s.addToast)
   const [selectedIds, setSelectedIds] = useState([])
   const prevPaymentRef = useRef(null)
@@ -109,16 +110,30 @@ function PayDebtModal() {
         <div className={styles.payTotal}>
           Selected: ${selectedTotal}M / ${amountOwed}M needed
         </div>
-        <button
-          className={styles.primaryButton}
-          disabled={!canPay}
-          onClick={() => {
-            processPayment(payment.fromIndex, payment.toIndex, selectedIds)
-            addToast(`${payer.name} paid $${selectedTotal}M to ${collector.name}`, 'success')
-          }}
-        >
-          Pay
-        </button>
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <button
+            className={styles.primaryButton}
+            disabled={!canPay}
+            onClick={() => {
+              processPayment(payment.fromIndex, payment.toIndex, selectedIds)
+              addToast(`${payer.name} paid $${selectedTotal}M to ${collector.name}`, 'success')
+            }}
+          >
+            Pay
+          </button>
+          {payer.hand.some(c => c.name?.toLowerCase() === 'just say no') && (
+            <button
+              className={styles.jsnBlock || styles.primaryButton}
+              style={{ background: 'var(--color-danger)' }}
+              onClick={() => {
+                useJSNForPayment(payment.fromIndex)
+                addToast(`${payer.name} played Just Say No!`, 'warning')
+              }}
+            >
+              Just Say No!
+            </button>
+          )}
+        </div>
       </motion.div>
     </motion.div>
   )
