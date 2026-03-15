@@ -118,7 +118,11 @@ function TargetSelectModal() {
               <div className={styles.playerList}>
                 {eligibleSets.map(([color]) => (
                   <button key={color} className={styles.playerButton} onClick={() => {
-                    resolveHouse && action === 'house' ? resolveHouse(modalData.cardId, color) : resolveHotel(modalData.cardId, color)
+                    if (action === 'house') {
+                      resolveHouse(modalData.cardId, color)
+                    } else {
+                      resolveHotel(modalData.cardId, color)
+                    }
                     addToast(`Placed ${action} on ${color}`, 'success')
                     closeModal()
                   }}>
@@ -128,11 +132,30 @@ function TargetSelectModal() {
               </div>
             </>
           ) : (
-            <div className={styles.modalSubtitle}>
-              {action === 'house'
-                ? 'You need a complete property set to place a house.'
-                : 'You need a complete set with a house to place a hotel.'}
-            </div>
+            (() => {
+              const completeSets = Object.entries(currentPlayer.properties)
+                .filter(([color]) => color !== 'railroad' && color !== 'utility' && isSetComplete(currentPlayer.properties, color))
+              const setsWithHouses = completeSets.filter(([color]) => hasHouse(currentPlayer, color))
+
+              if (action === 'hotel') {
+                if (completeSets.length === 0) {
+                  return <div className={styles.modalSubtitle}>You have no complete property sets. Complete a set first, then add a House, then a Hotel.</div>
+                }
+                if (setsWithHouses.length === 0) {
+                  return (
+                    <div className={styles.modalSubtitle}>
+                      Your complete sets ({completeSets.map(([c]) => c).join(', ')}) don&apos;t have Houses yet.
+                      <br />Play a House card first, then you can add a Hotel.
+                    </div>
+                  )
+                }
+                return <div className={styles.modalSubtitle}>All your sets with houses already have hotels.</div>
+              }
+              if (completeSets.length === 0) {
+                return <div className={styles.modalSubtitle}>You have no complete property sets. Complete a set to place a House.</div>
+              }
+              return <div className={styles.modalSubtitle}>All your complete sets already have houses.</div>
+            })()
           )}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
