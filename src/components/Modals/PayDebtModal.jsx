@@ -2,7 +2,14 @@ import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import useUIStore from '../../store/uiStore.js'
 import useGameStore from '../../store/gameStore.js'
+import { PROPERTY_CONFIG } from '../../engine/cards.js'
 import styles from './Modals.module.css'
+
+const COLOR_MAP = {
+  brown: '#955436', lightblue: '#aae0fa', pink: '#d93a96', orange: '#f7941d',
+  red: '#ed1b24', yellow: '#fef200', green: '#1fb25a', darkblue: '#0072bb',
+  railroad: '#2d2d2d', utility: '#9e9e9e',
+}
 
 function PayDebtModal() {
   const game = useGameStore(s => s.game)
@@ -93,19 +100,43 @@ function PayDebtModal() {
         <div className={styles.modalTitle}>{payer.name} — Pay ${amountOwed}M to {collector.name}</div>
         <div className={styles.modalSubtitle}>Select cards to pay with (no change given)</div>
         <div className={styles.playerList}>
-          {allPayableCards.map(card => (
-            <button
-              key={card.id}
-              className={styles.playerButton}
-              style={{
-                borderColor: selectedIds.includes(card.id) ? 'var(--color-primary)' : undefined,
-                background: selectedIds.includes(card.id) ? 'rgba(99,102,241,0.15)' : undefined,
-              }}
-              onClick={() => toggleCard(card.id)}
-            >
-              {card.name} (${card.value}M) — {card.source}
-            </button>
-          ))}
+          {allPayableCards.map(card => {
+            const isSelected = selectedIds.includes(card.id)
+            const color = card.fromColor || card.color
+            const setCount = color && payer.properties[color] ? payer.properties[color].length : 0
+            const setSize = color ? (PROPERTY_CONFIG[color]?.setSize || 0) : 0
+            const bgColor = color ? COLOR_MAP[color] : null
+
+            let label
+            if (card.source === 'bank') {
+              label = `${card.name} ($${card.value}M) — bank`
+            } else {
+              label = `${color} ($${card.value}M) — ${setCount}/${setSize} cards`
+            }
+
+            return (
+              <button
+                key={card.id}
+                className={styles.playerButton}
+                style={{
+                  borderColor: isSelected ? 'var(--color-primary)' : undefined,
+                  background: isSelected ? 'rgba(99,102,241,0.15)' : undefined,
+                }}
+                onClick={() => toggleCard(card.id)}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {card.source === 'property' && bgColor && (
+                    <span style={{
+                      width: 14, height: 14, borderRadius: 3,
+                      background: bgColor, border: '1px solid rgba(255,255,255,0.3)',
+                      flexShrink: 0,
+                    }} />
+                  )}
+                  {label}
+                </span>
+              </button>
+            )
+          })}
         </div>
         <div className={styles.payTotal}>
           Selected: ${selectedTotal}M / ${amountOwed}M needed
