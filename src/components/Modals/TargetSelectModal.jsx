@@ -124,26 +124,24 @@ function TargetSelectModal() {
                 {action === 'house' ? 'Choose a complete set to add a house' : 'Choose a set with a house to add a hotel'}
               </div>
               {eligibleSets.map(([color, cards]) => (
-                <div key={color} className={styles.paySection}>
-                  <button
-                    className={styles.colorPickerBtn}
-                    style={{ background: COLOR_CSS[color], width: '100%' }}
-                    onClick={() => {
-                      if (action === 'house') {
-                        resolveHouse(modalData.cardId, color)
-                      } else {
-                        resolveHotel(modalData.cardId, color)
-                      }
-                      addToast(`Placed ${action} on ${color}`, 'success')
-                      closeModal()
-                    }}
-                  >
-                    {color}
-                  </button>
+                <button
+                  key={color}
+                  className={styles.cardSetButton}
+                  onClick={() => {
+                    if (action === 'house') {
+                      resolveHouse(modalData.cardId, color)
+                    } else {
+                      resolveHotel(modalData.cardId, color)
+                    }
+                    addToast(`Placed ${action} on ${color}`, 'success')
+                    closeModal()
+                  }}
+                >
+                  <div className={styles.paySectionLabel} style={{ color: COLOR_CSS[color] }}>{color}</div>
                   <div className={styles.payCardGrid}>
                     {cards.map(c => <Card key={c.id} card={c} size="sm" />)}
                   </div>
-                </div>
+                </button>
               ))}
             </>
           ) : (
@@ -200,26 +198,26 @@ function TargetSelectModal() {
                 const isDoubled = modalData.doubled === true
                 const displayRent = isDoubled ? baseRent * 2 : baseRent
                 return (
-                  <div key={color} className={styles.paySection}>
-                    <button
-                      className={styles.colorPickerBtn}
-                      style={{ background: COLOR_CSS[color], width: '100%' }}
-                      onClick={() => {
-                        if (baseRent === 0) {
-                          addToast(`You have no ${color} properties — can't charge rent!`, 'warning')
-                          return
-                        }
-                        startRent(modalData.cardId, color, isDoubled, modalData.doubleCardId)
-                        addToast(`Charging $${displayRent}M${isDoubled ? ' (DOUBLED!)' : ''} rent for ${color}!`, 'success')
-                        closeModal()
-                      }}
-                    >
+                  <button
+                    key={color}
+                    className={styles.cardSetButton}
+                    onClick={() => {
+                      if (baseRent === 0) {
+                        addToast(`You have no ${color} properties — can't charge rent!`, 'warning')
+                        return
+                      }
+                      startRent(modalData.cardId, color, isDoubled, modalData.doubleCardId)
+                      addToast(`Charging $${displayRent}M${isDoubled ? ' (DOUBLED!)' : ''} rent for ${color}!`, 'success')
+                      closeModal()
+                    }}
+                  >
+                    <div className={styles.paySectionLabel} style={{ color: COLOR_CSS[color] }}>
                       {color} — ${displayRent}M rent{isDoubled ? ' (2x!)' : ''}
-                    </button>
+                    </div>
                     <div className={styles.payCardGrid}>
                       {currentPlayer.properties[color].map(c => <Card key={c.id} card={c} size="sm" />)}
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </>
@@ -300,22 +298,20 @@ function TargetSelectModal() {
         <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
           <div className={styles.modalTitle}>Choose a set to steal</div>
           {sets.map(([color, cards]) => (
-            <div key={color} className={styles.paySection}>
-              <button
-                className={styles.colorPickerBtn}
-                style={{ background: COLOR_CSS[color], width: '100%' }}
-                onClick={() => {
-                  initTargetedAction(modalData.cardId, 'dealBreaker', { targetIndex: selectedPlayer, color })
-                  addToast(`Deal Breaker! Targeting ${color} set (${cards.length} cards)`, 'success')
-                  closeModal()
-                }}
-              >
-                {color} ({cards.length} cards)
-              </button>
+            <button
+              key={color}
+              className={styles.cardSetButton}
+              onClick={() => {
+                initTargetedAction(modalData.cardId, 'dealBreaker', { targetIndex: selectedPlayer, color })
+                addToast(`Deal Breaker! Targeting ${color} set (${cards.length} cards)`, 'success')
+                closeModal()
+              }}
+            >
+              <div className={styles.paySectionLabel} style={{ color: COLOR_CSS[color] }}>{color} ({cards.length} cards)</div>
               <div className={styles.payCardGrid}>
                 {cards.map(c => <Card key={c.id} card={c} size="sm" />)}
               </div>
-            </div>
+            </button>
           ))}
           <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
         </motion.div>
