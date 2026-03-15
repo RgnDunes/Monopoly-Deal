@@ -21,6 +21,7 @@
   justify-content: center;
   overflow-x: auto;
   padding: 4px 0;
+  background: var(--bg-table);
 }
 
 .centerArea {

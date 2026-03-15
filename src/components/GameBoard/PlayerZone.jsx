@@ -7,6 +7,8 @@ const s = {
     padding: '10px 12px',
     minWidth: '220px',
     maxWidth: '500px',
+    maxHeight: '40vh',
+    overflowY: 'auto',
     border: '1px solid var(--color-border)',
     fontFamily: 'var(--font-game)',
   },
