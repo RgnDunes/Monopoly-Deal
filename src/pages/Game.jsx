@@ -8,6 +8,7 @@ import ActionChoiceModal from '../components/Modals/ActionChoiceModal.jsx'
 import TargetSelectModal from '../components/Modals/TargetSelectModal.jsx'
 import PayDebtModal from '../components/Modals/PayDebtModal.jsx'
 import JustSayNoModal from '../components/Modals/JustSayNoModal.jsx'
+import DiscardModal from '../components/Modals/DiscardModal.jsx'
 import PassDeviceModal from '../components/Modals/PassDeviceModal.jsx'
 import WinScreen from '../components/WinScreen/WinScreen.jsx'
 import useBotTurns from '../hooks/useBotTurns.js'
@@ -34,6 +35,7 @@ function Game() {
       <TargetSelectModal />
       <PayDebtModal />
       <JustSayNoModal />
+      <DiscardModal />
       <PassDeviceModal />
       <WinScreen />
     </>

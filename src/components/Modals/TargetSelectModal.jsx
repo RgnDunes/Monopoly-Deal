@@ -4,7 +4,21 @@ import useUIStore from '../../store/uiStore.js'
 import useGameStore from '../../store/gameStore.js'
 import { calculateRent } from '../../engine/rent.js'
 import { isSetComplete, hasHouse, hasHotel } from '../../engine/properties.js'
+import Card from '../Card/Card.jsx'
 import styles from './Modals.module.css'
+
+const COLOR_CSS = {
+  brown: 'var(--color-brown)',
+  lightblue: 'var(--color-lightblue)',
+  pink: 'var(--color-pink)',
+  orange: 'var(--color-orange)',
+  red: 'var(--color-red)',
+  yellow: 'var(--color-yellow)',
+  green: 'var(--color-green)',
+  darkblue: 'var(--color-darkblue)',
+  railroad: 'var(--color-railroad)',
+  utility: 'var(--color-utility)',
+}
 
 function TargetSelectModal() {
   const activeModal = useUIStore(s => s.activeModal)
@@ -51,13 +65,6 @@ function TargetSelectModal() {
     }
   }
 
-  // Helper: calculate opponent's total payable assets
-  const getPayableTotal = (player) => {
-    const bankTotal = player.bank.reduce((sum, c) => sum + (c.value || 0), 0)
-    const propTotal = Object.values(player.properties).flat().reduce((sum, c) => sum + (c.value || 0), 0)
-    return bankTotal + propTotal
-  }
-
   // Move wild card between property sets (free action)
   if (action === 'moveWild') {
     const card = modalData.card
@@ -71,11 +78,12 @@ function TargetSelectModal() {
         <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
           <div className={styles.modalTitle}>{getTitle()}</div>
           <div className={styles.modalSubtitle}>Move to which color set?</div>
-          <div className={styles.playerList}>
+          <div className={styles.colorPickerGrid}>
             {targetColors.map(color => (
               <button
                 key={color}
-                className={styles.playerButton}
+                className={styles.colorPickerBtn}
+                style={{ background: COLOR_CSS[color] }}
                 onClick={() => {
                   moveWild(card.id, modalData.fromColor, color)
                   addToast(`Moved wild to ${color} (free action)`, 'success')
@@ -115,21 +123,28 @@ function TargetSelectModal() {
               <div className={styles.modalSubtitle}>
                 {action === 'house' ? 'Choose a complete set to add a house' : 'Choose a set with a house to add a hotel'}
               </div>
-              <div className={styles.playerList}>
-                {eligibleSets.map(([color]) => (
-                  <button key={color} className={styles.playerButton} onClick={() => {
-                    if (action === 'house') {
-                      resolveHouse(modalData.cardId, color)
-                    } else {
-                      resolveHotel(modalData.cardId, color)
-                    }
-                    addToast(`Placed ${action} on ${color}`, 'success')
-                    closeModal()
-                  }}>
+              {eligibleSets.map(([color, cards]) => (
+                <div key={color} className={styles.paySection}>
+                  <button
+                    className={styles.colorPickerBtn}
+                    style={{ background: COLOR_CSS[color], width: '100%' }}
+                    onClick={() => {
+                      if (action === 'house') {
+                        resolveHouse(modalData.cardId, color)
+                      } else {
+                        resolveHotel(modalData.cardId, color)
+                      }
+                      addToast(`Placed ${action} on ${color}`, 'success')
+                      closeModal()
+                    }}
+                  >
                     {color}
                   </button>
-                ))}
-              </div>
+                  <div className={styles.payCardGrid}>
+                    {cards.map(c => <Card key={c.id} card={c} size="sm" />)}
+                  </div>
+                </div>
+              ))}
             </>
           ) : (
             (() => {
@@ -157,7 +172,7 @@ function TargetSelectModal() {
               return <div className={styles.modalSubtitle}>All your complete sets already have houses.</div>
             })()
           )}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={styles.payActions}>
             <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
             <button className={styles.cancelButton} onClick={handleBankInstead}>Bank as Money</button>
           </div>
@@ -166,7 +181,7 @@ function TargetSelectModal() {
     )
   }
 
-  // For rent, show color selection
+  // For rent, show color selection with property cards
   if (action === 'rent') {
     const rentColors = modalData.rentColors || []
     const ownedColors = rentColors.filter(color =>
@@ -180,33 +195,40 @@ function TargetSelectModal() {
           {ownedColors.length > 0 ? (
             <>
               <div className={styles.modalSubtitle}>Choose a color to charge rent for</div>
-              <div className={styles.playerList}>
-                {ownedColors.map(color => {
-                  const baseRent = calculateRent(currentPlayer, color)
-                  const isDoubled = modalData.doubled === true
-                  const displayRent = isDoubled ? baseRent * 2 : baseRent
-                  return (
-                    <button key={color} className={styles.playerButton} onClick={() => {
-                      if (baseRent === 0) {
-                        addToast(`You have no ${color} properties — can't charge rent!`, 'warning')
-                        return
-                      }
-                      startRent(modalData.cardId, color, isDoubled, modalData.doubleCardId)
-                      addToast(`Charging $${displayRent}M${isDoubled ? ' (DOUBLED!)' : ''} rent for ${color}!`, 'success')
-                      closeModal()
-                    }}>
+              {ownedColors.map(color => {
+                const baseRent = calculateRent(currentPlayer, color)
+                const isDoubled = modalData.doubled === true
+                const displayRent = isDoubled ? baseRent * 2 : baseRent
+                return (
+                  <div key={color} className={styles.paySection}>
+                    <button
+                      className={styles.colorPickerBtn}
+                      style={{ background: COLOR_CSS[color], width: '100%' }}
+                      onClick={() => {
+                        if (baseRent === 0) {
+                          addToast(`You have no ${color} properties — can't charge rent!`, 'warning')
+                          return
+                        }
+                        startRent(modalData.cardId, color, isDoubled, modalData.doubleCardId)
+                        addToast(`Charging $${displayRent}M${isDoubled ? ' (DOUBLED!)' : ''} rent for ${color}!`, 'success')
+                        closeModal()
+                      }}
+                    >
                       {color} — ${displayRent}M rent{isDoubled ? ' (2x!)' : ''}
                     </button>
-                  )
-                })}
-              </div>
+                    <div className={styles.payCardGrid}>
+                      {currentPlayer.properties[color].map(c => <Card key={c.id} card={c} size="sm" />)}
+                    </div>
+                  </div>
+                )
+              })}
             </>
           ) : (
             <div className={styles.modalSubtitle}>
               You don&apos;t own any matching properties.
             </div>
           )}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={styles.payActions}>
             <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
             <button className={styles.cancelButton} onClick={handleBankInstead}>Bank as Money</button>
           </div>
@@ -224,18 +246,14 @@ function TargetSelectModal() {
           <div className={styles.modalSubtitle}>Choose a player</div>
           <div className={styles.playerList}>
             {opponents.map(p => {
-              const payable = getPayableTotal(p)
-              const isDebt = action === 'debtCollector'
-              const disabled = isDebt && payable === 0
+              const propCount = Object.values(p.properties).flat().length
+              const bankTotal = p.bank.reduce((sum, c) => sum + (c.value || 0), 0)
               return (
                 <button
                   key={p.index}
                   className={styles.playerButton}
-                  disabled={disabled}
-                  style={disabled ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                   onClick={() => {
-                    if (disabled) return
-                    if (isDebt) {
+                    if (action === 'debtCollector') {
                       startDebtCollector(modalData.cardId, p.index)
                       addToast(`Debt Collector! ${p.name} owes $5M`, 'info')
                       closeModal()
@@ -245,21 +263,14 @@ function TargetSelectModal() {
                   }}
                 >
                   {p.name}
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', marginLeft: '8px' }}>
-                    {isDebt
-                      ? (payable > 0 ? `$${payable}M in assets` : 'nothing to pay')
-                      : `${Object.values(p.properties).flat().length} props, ${p.bank.length} bank`}
+                  <span className={styles.playerMeta}>
+                    {propCount} properties, ${bankTotal}M bank
                   </span>
                 </button>
               )
             })}
           </div>
-          {action === 'debtCollector' && opponents.every(p => getPayableTotal(p) === 0) && (
-            <div className={styles.modalSubtitle} style={{ color: 'var(--color-warning)', marginTop: '8px' }}>
-              No opponents have assets to collect from.
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={styles.payActions}>
             <button className={styles.cancelButton} onClick={closeModal}>Cancel</button>
             <button className={styles.cancelButton} onClick={handleBankInstead}>Bank as Money</button>
           </div>
@@ -288,17 +299,24 @@ function TargetSelectModal() {
       <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
         <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
           <div className={styles.modalTitle}>Choose a set to steal</div>
-          <div className={styles.playerList}>
-            {sets.map(([color, cards]) => (
-              <button key={color} className={styles.playerButton} onClick={() => {
-                initTargetedAction(modalData.cardId, 'dealBreaker', { targetIndex: selectedPlayer, color })
-                addToast(`Deal Breaker! Targeting ${color} set (${cards.length} cards)`, 'success')
-                closeModal()
-              }}>
+          {sets.map(([color, cards]) => (
+            <div key={color} className={styles.paySection}>
+              <button
+                className={styles.colorPickerBtn}
+                style={{ background: COLOR_CSS[color], width: '100%' }}
+                onClick={() => {
+                  initTargetedAction(modalData.cardId, 'dealBreaker', { targetIndex: selectedPlayer, color })
+                  addToast(`Deal Breaker! Targeting ${color} set (${cards.length} cards)`, 'success')
+                  closeModal()
+                }}
+              >
                 {color} ({cards.length} cards)
               </button>
-            ))}
-          </div>
+              <div className={styles.payCardGrid}>
+                {cards.map(c => <Card key={c.id} card={c} size="sm" />)}
+              </div>
+            </div>
+          ))}
           <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
         </motion.div>
       </motion.div>
@@ -308,24 +326,32 @@ function TargetSelectModal() {
   // Step 2: Sly Deal — select card to steal
   if (action === 'slyDeal') {
     const target = game.players[selectedPlayer]
-    const allCards = Object.entries(target.properties).flatMap(([color, cards]) =>
-      cards.map(c => ({ ...c, displayColor: color }))
-    )
+    const colorGroups = Object.entries(target.properties)
+      .filter(([, cards]) => cards && cards.length > 0)
+
     return (
       <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
         <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
           <div className={styles.modalTitle}>Choose a card to steal</div>
-          <div className={styles.playerList}>
-            {allCards.map(card => (
-              <button key={card.id} className={styles.playerButton} onClick={() => {
-                initTargetedAction(modalData.cardId, 'slyDeal', { targetIndex: selectedPlayer, cardId: card.id })
-                addToast('Sly Deal! Targeting a property', 'success')
-                closeModal()
-              }}>
-                {card.name} ({card.displayColor})
-              </button>
-            ))}
-          </div>
+          {colorGroups.map(([color, cards]) => (
+            <div key={color} className={styles.paySection}>
+              <div className={styles.paySectionLabel}>{color}</div>
+              <div className={styles.payCardGrid}>
+                {cards.map(card => (
+                  <Card
+                    key={card.id}
+                    card={card}
+                    size="sm"
+                    onClick={() => {
+                      initTargetedAction(modalData.cardId, 'slyDeal', { targetIndex: selectedPlayer, cardId: card.id })
+                      addToast('Sly Deal! Targeting a property', 'success')
+                      closeModal()
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
           <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
         </motion.div>
       </motion.div>
@@ -335,10 +361,10 @@ function TargetSelectModal() {
   // Step 2: Forced Deal — select their card
   if (action === 'forcedDeal' && theirCardId === null) {
     const target = game.players[selectedPlayer]
-    const allCards = Object.entries(target.properties).flatMap(([color, cards]) =>
-      cards.map(c => ({ ...c, displayColor: color }))
-    )
-    if (allCards.length === 0) {
+    const colorGroups = Object.entries(target.properties)
+      .filter(([, cards]) => cards && cards.length > 0)
+
+    if (colorGroups.length === 0) {
       return (
         <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
           <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
@@ -352,13 +378,21 @@ function TargetSelectModal() {
       <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
         <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
           <div className={styles.modalTitle}>Choose their property to take</div>
-          <div className={styles.playerList}>
-            {allCards.map(card => (
-              <button key={card.id} className={styles.playerButton} onClick={() => setTheirCardId(card.id)}>
-                {card.name} ({card.displayColor})
-              </button>
-            ))}
-          </div>
+          {colorGroups.map(([color, cards]) => (
+            <div key={color} className={styles.paySection}>
+              <div className={styles.paySectionLabel}>{color}</div>
+              <div className={styles.payCardGrid}>
+                {cards.map(card => (
+                  <Card
+                    key={card.id}
+                    card={card}
+                    size="sm"
+                    onClick={() => setTheirCardId(card.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
           <button className={styles.cancelButton} onClick={() => setSelectedPlayer(null)}>Back</button>
         </motion.div>
       </motion.div>
@@ -367,10 +401,10 @@ function TargetSelectModal() {
 
   // Step 3: Forced Deal — select your card to give
   if (action === 'forcedDeal' && theirCardId !== null) {
-    const myCards = Object.entries(currentPlayer.properties).flatMap(([color, cards]) =>
-      cards.map(c => ({ ...c, displayColor: color }))
-    )
-    if (myCards.length === 0) {
+    const myColorGroups = Object.entries(currentPlayer.properties)
+      .filter(([, cards]) => cards && cards.length > 0)
+
+    if (myColorGroups.length === 0) {
       return (
         <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
           <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
@@ -384,18 +418,26 @@ function TargetSelectModal() {
       <motion.div className={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModal}>
         <motion.div className={styles.modal} initial={{ scale: 0.9 }} animate={{ scale: 1 }} onClick={e => e.stopPropagation()}>
           <div className={styles.modalTitle}>Choose your property to give</div>
-          <div className={styles.playerList}>
-            {myCards.map(card => (
-              <button key={card.id} className={styles.playerButton} onClick={() => {
-                initTargetedAction(modalData.cardId, 'forcedDeal', { targetIndex: selectedPlayer, yourCardId: card.id, theirCardId })
-                addToast('Forced Deal! Swapping properties', 'success')
-                setTheirCardId(null)
-                closeModal()
-              }}>
-                {card.name} ({card.displayColor})
-              </button>
-            ))}
-          </div>
+          {myColorGroups.map(([color, cards]) => (
+            <div key={color} className={styles.paySection}>
+              <div className={styles.paySectionLabel}>{color}</div>
+              <div className={styles.payCardGrid}>
+                {cards.map(card => (
+                  <Card
+                    key={card.id}
+                    card={card}
+                    size="sm"
+                    onClick={() => {
+                      initTargetedAction(modalData.cardId, 'forcedDeal', { targetIndex: selectedPlayer, yourCardId: card.id, theirCardId })
+                      addToast('Forced Deal! Swapping properties', 'success')
+                      setTheirCardId(null)
+                      closeModal()
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
           <button className={styles.cancelButton} onClick={() => setTheirCardId(null)}>Back</button>
         </motion.div>
       </motion.div>

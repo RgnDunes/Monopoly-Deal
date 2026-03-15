@@ -218,3 +218,34 @@
   text-align: center;
   margin: 8px 0;
 }
+
+.colorPickerGrid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.colorPickerBtn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-family: var(--font-game);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  transition: opacity var(--t-fast), transform var(--t-fast);
+}
+
+.colorPickerBtn:hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+}
+
+.playerMeta {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  margin-left: 8px;
+}
