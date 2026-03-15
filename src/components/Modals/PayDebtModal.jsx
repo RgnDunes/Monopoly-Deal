@@ -9,7 +9,7 @@ function PayDebtModal() {
   const pendingPayments = useGameStore(s => s.pendingPayments)
   const processPayment = useGameStore(s => s.processPayment)
   const skipPayment = useGameStore(s => s.skipPayment)
-  const useJSNForPayment = useGameStore(s => s.useJSNForPayment)
+  const jsnForPayment = useGameStore(s => s.useJSNForPayment)
   const addToast = useUIStore(s => s.addToast)
   const [selectedIds, setSelectedIds] = useState([])
   const prevPaymentRef = useRef(null)
@@ -126,7 +126,7 @@ function PayDebtModal() {
               className={styles.jsnBlock || styles.primaryButton}
               style={{ background: 'var(--color-danger)' }}
               onClick={() => {
-                useJSNForPayment(payment.fromIndex)
+                jsnForPayment(payment.fromIndex)
                 addToast(`${payer.name} played Just Say No!`, 'warning')
               }}
             >

@@ -42,7 +42,8 @@ function GameBoard() {
     } else if (name === 'hotel') {
       showModal('targetSelect', { action: 'hotel', cardId: card.id })
     } else if (name === 'double the rent') {
-      const rentCards = currentPlayer.hand.filter(c => c.type === 'rent' && c.id !== card.id)
+      const cp = game.players[game.currentPlayerIndex]
+      const rentCards = cp.hand.filter(c => c.type === 'rent' && c.id !== card.id)
       if (rentCards.length > 0 && game.playsRemaining >= 2) {
         showModal('actionChoice', { card, subAction: 'doubleTheRent', rentCards })
       } else {
@@ -53,7 +54,7 @@ function GameBoard() {
       bankCard(card.id)
       addToast(`Banked ${card.name} as money`, 'success')
     }
-  }, [bankCard, showModal, addToast])
+  }, [bankCard, showModal, addToast, game])
 
   const handleRentCard = useCallback((card) => {
     showModal('targetSelect', { action: 'rent', cardId: card.id, rentColors: card.rentColors, targetsAll: card.targetsAll })
